@@ -101,8 +101,8 @@ if ($mode === 'edit' && isset($_GET['id'])) {
                             <th>ID</th>
                             <th>Product Name</th>
                             <th>Unit</th>
-                            <th>Opening Stock (Pcs/Kg)</th>
-                            <th>Current Stock (Pcs/Kg)</th>
+                            <th>Opening Stock (<?php echo ($_SESSION['dept_id'] == 1 ? 'Pcs/' : ''); ?>Kg)</th>
+                            <th>Current Stock (<?php echo ($_SESSION['dept_id'] == 1 ? 'Pcs/' : ''); ?>Kg)</th>
                              <th>Rate (₹)</th>
                             <th>Actions</th>
                         </tr>
@@ -117,9 +117,9 @@ if ($mode === 'edit' && isset($_GET['id'])) {
                             <td>#<?php echo $row['id']; ?></td>
                             <td class="fw-bold"><?php echo htmlspecialchars($row['name']); ?></td>
                             <td><?php echo $row['unit']; ?></td>
-                            <td><?php echo $row['opening_pcs']; ?> / <?php echo $row['opening_kgs']; ?></td>
+                            <td><?php if($_SESSION['dept_id'] == 1) echo $row['opening_pcs'] . " / "; echo $row['opening_kgs']; ?></td>
                             <td class="fw-bold">
-                                <?php echo $row['total_pcs']; ?> Pcs / <?php echo $row['total_kgs']; ?> Kg
+                                <?php if($_SESSION['dept_id'] == 1) echo $row['total_pcs'] . " Pcs / "; echo $row['total_kgs'] . " Kg"; ?>
                             </td>
                             <td><?php echo format_currency($row['rate']); ?></td>
                             <td>
@@ -161,14 +161,20 @@ if ($mode === 'edit' && isset($_GET['id'])) {
                     <div class="col-md-3 mb-3">
                         <label class="form-label">Unit *</label>
                         <select name="unit" class="form-select border-secondary" required>
+                            <?php if ($_SESSION['dept_id'] == 1): ?>
                             <option value="Pcs" <?php echo ($product && $product['unit'] == 'Pcs') ? 'selected' : ''; ?>>Pcs</option>
-                            <option value="Kgs" <?php echo ($product && $product['unit'] == 'Kgs') ? 'selected' : ''; ?>>Kgs</option>
+                            <?php endif; ?>
+                            <option value="Kgs" <?php echo ($product && $product['unit'] == 'Kgs' || $_SESSION['dept_id'] != 1) ? 'selected' : ''; ?>>Kgs</option>
                         </select>
                     </div>
+                    <?php if ($_SESSION['dept_id'] == 1): ?>
                     <div class="col-md-3 mb-3">
                         <label class="form-label">Opening Pcs *</label>
                         <input type="number" step="0.01" name="opening_pcs" class="form-control" value="<?php echo $product ? $product['opening_pcs'] : '0.00'; ?>">
                     </div>
+                    <?php else: ?>
+                        <input type="hidden" name="opening_pcs" value="0">
+                    <?php endif; ?>
                     <div class="col-md-3 mb-3">
                         <label class="form-label">Opening Kgs *</label>
                         <input type="number" step="0.01" name="opening_kgs" class="form-control" value="<?php echo $product ? $product['opening_kgs'] : '0.00'; ?>">
@@ -178,9 +184,11 @@ if ($mode === 'edit' && isset($_GET['id'])) {
                         <input type="number" step="0.01" name="rate" class="form-control" value="<?php echo $product ? $product['rate'] : '0.00'; ?>">
                     </div>
                     <?php if ($mode === 'edit'): ?>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label">Current Stock (Derived)</label>
-                        <div class="form-control bg-light"><?php echo $product['total_pcs']; ?> Pcs / <?php echo $product['total_kgs']; ?> Kg</div>
+                        <div class="form-control bg-light">
+                            <?php if ($_SESSION['dept_id'] == 1) echo $product['total_pcs'] . " Pcs / "; echo $product['total_kgs'] . " Kg"; ?>
+                        </div>
                     </div>
                     <?php endif; ?>
                     <div class="col-md-12 mb-4">
