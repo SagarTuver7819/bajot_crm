@@ -1,0 +1,39 @@
+# Database configuration
+config.php
+
+# Environment variables
+.env
+
+# Dependencies
+vendor/
+node_modules/
+
+# Logs and temp files
+*.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+# Database backups and schema
+*.sql
+db_schema.txt
+
+# Backups and archives
+*.zip
+*.rar
+*.7z
+
+# IDE/Editor settings
+.vscode/
+.idea/
+
+# Maintenance/Utility scripts
+check_db.php
+cleanup_data.php
+debug_db.php
+fix_db_v2.php
+fix_missing_cols.php
+update_db.php
+fix_db.php
+test_*.php
