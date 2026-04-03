@@ -18,8 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_voucher'])) {
         $stmt = $conn->prepare("UPDATE vouchers SET type=?, party_id=?, amount=?, date=?, description=? WHERE id=?");
         $stmt->bind_param("sidssi", $type, $party_id, $amount, $date, $desc, $edit_id);
     } else {
-        $stmt = $conn->prepare("INSERT INTO vouchers (type, party_id, amount, date, description) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("sidss", $type, $party_id, $amount, $date, $desc);
+        $dept_id = (int)$_SESSION['dept_id'];
+        $stmt = $conn->prepare("INSERT INTO vouchers (dept_id, type, party_id, amount, date, description) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("isidss", $dept_id, $type, $party_id, $amount, $date, $desc);
     }
     
     if ($stmt->execute()) {
@@ -76,9 +77,10 @@ if (isset($_GET['delete'])) {
                     </thead>
                     <tbody>
                         <?php 
-                        $res = $conn->query("SELECT v.*, p.name as party_name FROM vouchers v LEFT JOIN parties p ON v.party_id = p.id ORDER BY v.date DESC");
+                        $dept_id = (int)$_SESSION['dept_id'];
+                        $res = $conn->query("SELECT v.*, p.name as party_name FROM vouchers v LEFT JOIN parties p ON v.party_id = p.id WHERE v.dept_id = $dept_id ORDER BY v.date DESC");
                         while ($row = $res->fetch_assoc()):
-                            $color = 'text-white';
+                            $color = ($theme === 'dark' ? 'text-white' : 'text-dark');
                             if($row['type'] == 'receipt') $color = 'text-success';
                             elseif($row['type'] == 'payment') $color = 'text-danger';
                             elseif($row['type'] == 'expense') $color = 'text-info';

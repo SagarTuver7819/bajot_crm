@@ -23,12 +23,12 @@ $recent_activities = $conn->query("
     <div class="row align-items-center">
         <div class="col-md-8">
             <h3 class="fw-bold text-theme mb-1">Corporate Dashboard</h3>
-            <p class="text-muted small mb-0">Welcome back, <span class="text-gold"><?php echo $_SESSION['name']; ?></span>. Here is what's happening today.</p>
+            <p class="text-secondary-themed small mb-0">Welcome back, <span class="text-gold"><?php echo $_SESSION['name']; ?></span>. Here is what's happening today.</p>
         </div>
         <div class="col-md-4 text-md-end mt-3 mt-md-0">
             <div class="d-inline-flex align-items-center bg-dark-card p-2 px-3 rounded-pill border border-secondary shadow-sm">
                 <i class="fa fa-calendar-alt text-gold me-2"></i>
-                <span class="small text-muted"><?php echo date('D, d M Y'); ?></span>
+                <span class="small text-secondary-themed fw-bold"><?php echo date('D, d M Y'); ?></span>
             </div>
         </div>
     </div>
@@ -43,8 +43,8 @@ $recent_activities = $conn->query("
                         <i class="fa fa-chart-line text-success fa-lg"></i>
                     </div>
                 </div>
-                <h6 class="text-muted extra-small text-uppercase mb-1">Invoiced Sales</h6>
-                <h2 class="fw-bold mb-0 text-white"><?php echo format_currency($total_sales); ?></h2>
+                <h6 class="text-secondary-themed extra-small text-uppercase mb-1">Invoiced Sales</h6>
+                <h2 class="fw-bold mb-0 <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo format_currency($total_sales); ?></h2>
                 <div class="mt-3 text-success extra-small fw-bold">
                     <i class="fa fa-caret-up me-1"></i> Current Month
                 </div>
@@ -60,8 +60,8 @@ $recent_activities = $conn->query("
                         <i class="fa fa-shopping-cart text-primary fa-lg"></i>
                     </div>
                 </div>
-                <h6 class="text-muted extra-small text-uppercase mb-1">Procurement Costs</h6>
-                <h2 class="fw-bold mb-0 text-white"><?php echo format_currency($total_purchase); ?></h2>
+                <h6 class="text-secondary-themed extra-small text-uppercase mb-1">Procurement Costs</h6>
+                <h2 class="fw-bold mb-0 <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo format_currency($total_purchase); ?></h2>
                 <div class="mt-3 text-primary extra-small fw-bold">
                     <i class="fa fa-caret-right me-1"></i> Stable Trend
                 </div>
@@ -77,8 +77,8 @@ $recent_activities = $conn->query("
                         <i class="fa fa-wallet text-gold fa-lg"></i>
                     </div>
                 </div>
-                <h6 class="text-muted extra-small text-uppercase mb-1">Company Net Balance</h6>
-                <h2 class="fw-bold mb-0 text-white"><?php echo format_currency($profit); ?></h2>
+                <h6 class="text-secondary-themed extra-small text-uppercase mb-1">Company Net Balance</h6>
+                <h2 class="fw-bold mb-0 <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo format_currency($profit); ?></h2>
                 <div class="mt-3 text-gold extra-small fw-bold">
                     <i class="fa fa-shield-alt me-1"></i> Account Health: Secure
                 </div>
@@ -147,8 +147,8 @@ $recent_activities = $conn->query("
                     <?php while ($prod = $low_stock->fetch_assoc()): ?>
                     <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center text-theme px-0">
                         <div>
-                            <p class="mb-0 fw-bold"><?php echo $prod['name']; ?></p>
-                            <small class="text-muted">Unit: <?php echo $prod['unit']; ?></small>
+                            <p class="mb-0 fw-bold <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo $prod['name']; ?></p>
+                            <small class="text-secondary-themed">Unit: <?php echo $prod['unit']; ?></small>
                         </div>
                         <span class="badge bg-danger rounded-pill"><?php echo $prod['current_stock']; ?> Left</span>
                     </li>
@@ -165,30 +165,30 @@ $recent_activities = $conn->query("
                 <div class="quick-action-icon mb-3">
                     <i class="fa fa-bolt text-gold fa-3x op-3 animated bounceInfinite"></i>
                 </div>
-                <h5 class="fw-bold text-white mb-4">Management Hub</h5>
+                <h5 class="fw-bold <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?> mb-4">Management Hub</h5>
                 <div class="row g-2">
                     <div class="col-6">
-                        <a href="outward_crud.php?mode=add" class="d-flex flex-column align-items-center p-3 rounded-3 bg-dark border border-secondary text-decoration-none hover-gold transition">
+                        <a href="outward_crud.php?mode=add" class="d-flex flex-column align-items-center p-3 rounded-3 bg-dark-card border border-secondary text-decoration-none hover-gold transition">
                             <i class="fa fa-file-invoice text-gold mb-2 h4"></i>
-                            <span class="extra-small text-muted font-weight-bold">NEW SALE</span>
+                            <span class="extra-small text-secondary-themed font-weight-bold">NEW SALE</span>
                         </a>
                     </div>
                     <div class="col-6">
-                        <a href="inward_crud.php?mode=add" class="d-flex flex-column align-items-center p-3 rounded-3 bg-dark border border-secondary text-decoration-none hover-gold transition">
+                        <a href="inward_crud.php?mode=add" class="d-flex flex-column align-items-center p-3 rounded-3 bg-dark-card border border-secondary text-decoration-none hover-gold transition">
                             <i class="fa fa-truck-loading text-gold mb-2 h4"></i>
-                            <span class="extra-small text-muted font-weight-bold">NEW STOCK</span>
+                            <span class="extra-small text-secondary-themed font-weight-bold">NEW STOCK</span>
                         </a>
                     </div>
                     <div class="col-6">
-                        <a href="party_crud.php" class="d-flex flex-column align-items-center p-3 rounded-3 bg-dark border border-secondary text-decoration-none hover-gold transition">
+                        <a href="party_crud.php" class="d-flex flex-column align-items-center p-3 rounded-3 bg-dark-card border border-secondary text-decoration-none hover-gold transition">
                             <i class="fa fa-users text-gold mb-2 h4"></i>
-                            <span class="extra-small text-muted font-weight-bold">CLIENTS</span>
+                            <span class="extra-small text-secondary-themed font-weight-bold">CLIENTS</span>
                         </a>
                     </div>
                     <div class="col-6">
-                        <a href="reports.php" class="d-flex flex-column align-items-center p-3 rounded-3 bg-dark border border-secondary text-decoration-none hover-gold transition">
+                        <a href="reports.php" class="d-flex flex-column align-items-center p-3 rounded-3 bg-dark-card border border-secondary text-decoration-none hover-gold transition">
                             <i class="fa fa-chart-pie text-gold mb-2 h4"></i>
-                            <span class="extra-small text-muted font-weight-bold">ANALYTICS</span>
+                            <span class="extra-small text-secondary-themed font-weight-bold">ANALYTICS</span>
                         </a>
                     </div>
                 </div>

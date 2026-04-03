@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
 
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
-        <h4 class="mb-0 text-white">Current Stock & Ledger</h4>
+        <h4 class="mb-0 <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>">Current Stock & Ledger</h4>
         <button type="button" class="btn btn-gold" data-bs-toggle="modal" data-bs-target="#adjustStockModal">
             <i class="fa fa-adjust me-1"></i> Manual Adjustment
         </button>
@@ -32,20 +32,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
     <div class="col-md-3">
         <div class="card card-bajot p-3">
             <h6 class="text-muted small">Total Items</h6>
-            <h4 class="fw-bold"><?php echo $conn->query("SELECT COUNT(*) FROM products")->fetch_row()[0]; ?></h4>
+            <h4 class="fw-bold"><?php 
+                $dept_id = (int)$_SESSION['dept_id'];
+                echo $conn->query("SELECT COUNT(*) FROM products WHERE dept_id = $dept_id")->fetch_row()[0]; 
+            ?></h4>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card card-bajot p-3 border-danger">
             <h6 class="text-muted small">Low Stock Alert</h6>
-            <h4 class="fw-bold text-danger"><?php echo $conn->query("SELECT COUNT(*) FROM products WHERE current_stock < 10")->fetch_row()[0]; ?></h4>
+            <h4 class="fw-bold text-danger"><?php echo $conn->query("SELECT COUNT(*) FROM products WHERE dept_id = $dept_id AND current_stock < 10")->fetch_row()[0]; ?></h4>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card card-bajot p-3 border-theme">
             <h6 class="text-muted small">Total Current Pcs</h6>
             <h4 class="fw-bold text-theme"><?php 
-                $total_pcs_sum = $conn->query("SELECT SUM(total_pcs) FROM products")->fetch_row()[0];
+                $total_pcs_sum = $conn->query("SELECT SUM(total_pcs) FROM products WHERE dept_id = $dept_id")->fetch_row()[0];
                 echo number_format($total_pcs_sum ?? 0, 2); 
             ?></h4>
         </div>
@@ -54,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
         <div class="card card-bajot p-3 border-theme">
             <h6 class="text-muted small">Total Current Kgs</h6>
             <h4 class="fw-bold text-theme"><?php 
-                $total_kgs_sum = $conn->query("SELECT SUM(total_kgs) FROM products")->fetch_row()[0];
+                $total_kgs_sum = $conn->query("SELECT SUM(total_kgs) FROM products WHERE dept_id = $dept_id")->fetch_row()[0];
                 echo number_format($total_kgs_sum ?? 0, 2); 
             ?></h4>
         </div>
@@ -77,7 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
                 </thead>
                 <tbody>
                     <?php 
-                    $res = $conn->query("SELECT * FROM products ORDER BY current_stock ASC");
+                    $dept_id = (int)$_SESSION['dept_id'];
+                    $res = $conn->query("SELECT * FROM products WHERE dept_id = $dept_id ORDER BY current_stock ASC");
                     $footer_total_pcs = 0;
                     $footer_total_kgs = 0;
                     while ($row = $res->fetch_assoc()):
@@ -111,37 +115,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
 <!-- Stock Adjustment Modal -->
 <div class="modal fade" id="adjustStockModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark text-white border-secondary">
+        <div class="modal-content bg-dark-card border-secondary">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title">Manual Stock Adjustment</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>">Manual Stock Adjustment</h5>
+                <button type="button" class="btn-close <?php echo ($theme === 'dark' ? 'btn-close-white' : ''); ?>" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Select Product</label>
-                        <select name="product_id" class="form-select bg-dark text-white border-secondary" required>
+                        <label class="form-label <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>">Select Product</label>
+                        <select name="product_id" class="form-select <?php echo ($theme === 'dark' ? 'bg-dark text-white border-secondary' : ''); ?>" required>
                             <?php 
-                            $prods = $conn->query("SELECT id, name FROM products");
+                            $dept_id = (int)$_SESSION['dept_id'];
+                            $prods = $conn->query("SELECT id, name FROM products WHERE dept_id = $dept_id");
                             while($p = $prods->fetch_assoc()) echo "<option value='{$p['id']}'>{$p['name']}</option>";
                             ?>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Adjustment Type</label>
-                        <select name="adj_type" class="form-select bg-dark text-white border-secondary">
+                        <label class="form-label <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>">Adjustment Type</label>
+                        <select name="adj_type" class="form-select <?php echo ($theme === 'dark' ? 'bg-dark text-white border-secondary' : ''); ?>">
                             <option value="add">Add Stock (+)</option>
                             <option value="subtract">Subtract Stock (-)</option>
                         </select>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Qty (Pcs)</label>
-                            <input type="number" step="0.01" name="qty_pcs" class="form-control bg-dark text-white border-secondary" required value="0">
+                            <label class="form-label <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>">Qty (Pcs)</label>
+                            <input type="number" step="0.01" name="qty_pcs" class="form-control <?php echo ($theme === 'dark' ? 'bg-dark text-white border-secondary' : ''); ?>" required value="0">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Qty (Kgs)</label>
-                            <input type="number" step="0.01" name="qty_kgs" class="form-control bg-dark text-white border-secondary" required value="0">
+                            <label class="form-label <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>">Qty (Kgs)</label>
+                            <input type="number" step="0.01" name="qty_kgs" class="form-control <?php echo ($theme === 'dark' ? 'bg-dark text-white border-secondary' : ''); ?>" required value="0">
                         </div>
                     </div>
                 </div>

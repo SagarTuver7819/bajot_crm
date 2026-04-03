@@ -19,9 +19,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Duplication Check (using cleaned name for safety in direct query)
         $clean_name = clean($name);
+        $dept_id = (int)$_SESSION['dept_id'];
         $check_q = ($mode === 'add') ? 
-            "SELECT id FROM products WHERE name = '$clean_name'" : 
-            "SELECT id FROM products WHERE name = '$clean_name' AND id != " . (int)$_POST['id'];
+            "SELECT id FROM products WHERE name = '$clean_name' AND dept_id = $dept_id" : 
+            "SELECT id FROM products WHERE name = '$clean_name' AND dept_id = $dept_id AND id != " . (int)$_POST['id'];
         
         $check_res = $conn->query($check_q);
         if ($check_res->num_rows > 0) {
@@ -37,9 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </script>";
         } else {
             if ($mode === 'add') {
-                $stmt = $conn->prepare("INSERT INTO products (name, unit, opening_pcs, opening_kgs, total_pcs, total_kgs, rate, current_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $dept_id = (int)$_SESSION['dept_id'];
+                $stmt = $conn->prepare("INSERT INTO products (dept_id, name, unit, opening_pcs, opening_kgs, total_pcs, total_kgs, rate, current_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $current_stock = ($unit === 'Pcs') ? $opening_pcs : $opening_kgs;
-                $stmt->bind_param("ssdddddd", $name, $unit, $opening_pcs, $opening_kgs, $opening_pcs, $opening_kgs, $rate, $current_stock);
+                $stmt->bind_param("issdddddd", $dept_id, $name, $unit, $opening_pcs, $opening_kgs, $opening_pcs, $opening_kgs, $rate, $current_stock);
             } else {
                 $id = (int)$_POST['id'];
                 // Update product info. When user is editing opening stock, we also update total_pcs and total_kgs.
@@ -107,7 +109,8 @@ if ($mode === 'edit' && isset($_GET['id'])) {
                     </thead>
                     <tbody>
                         <?php 
-                        $res = $conn->query("SELECT * FROM products ORDER BY id DESC");
+                        $dept_id = (int)$_SESSION['dept_id'];
+                        $res = $conn->query("SELECT * FROM products WHERE dept_id = $dept_id ORDER BY id DESC");
                         while ($row = $res->fetch_assoc()):
                         ?>
                         <tr>
