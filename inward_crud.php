@@ -40,8 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_inward'])) {
             $inward_id = $edit_id;
         } else {
             // Insert into inwards
-            $stmt = $conn->prepare("INSERT INTO inwards (party_id, date, bill_no) VALUES (?, ?, ?)");
-            $stmt->bind_param("iss", $party_id, $date, $bill_no);
+            $dept_id = (int)$_SESSION['dept_id'];
+            $stmt = $conn->prepare("INSERT INTO inwards (dept_id, party_id, date, bill_no) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param("iiss", $dept_id, $party_id, $date, $bill_no);
             $stmt->execute();
             $inward_id = $conn->insert_id;
         }
@@ -122,7 +123,8 @@ if (isset($_GET['delete'])) {
                     </thead>
                     <tbody>
                         <?php 
-                        $res = $conn->query("SELECT i.*, p.name as supplier_name FROM inwards i JOIN parties p ON i.party_id = p.id ORDER BY i.id DESC");
+                        $dept_id = (int)$_SESSION['dept_id'];
+                        $res = $conn->query("SELECT i.*, p.name as supplier_name FROM inwards i JOIN parties p ON i.party_id = p.id WHERE i.dept_id = $dept_id ORDER BY i.id DESC");
                         while ($row = $res->fetch_assoc()):
                             $item_count = $conn->query("SELECT COUNT(*) FROM inward_items WHERE inward_id=".$row['id'])->fetch_row()[0];
                         ?>
@@ -174,7 +176,8 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
     }
 
     if ($mode === 'add') {
-        $last_bill = $conn->query("SELECT bill_no FROM inwards ORDER BY id DESC LIMIT 1")->fetch_assoc();
+        $dept_id = (int)$_SESSION['dept_id'];
+        $last_bill = $conn->query("SELECT bill_no FROM inwards WHERE dept_id = $dept_id ORDER BY id DESC LIMIT 1")->fetch_assoc();
         if ($last_bill) {
             $num = (int)$last_bill['bill_no'];
             $next_bill_no = str_pad($num + 1, 2, '0', STR_PAD_LEFT);
@@ -242,7 +245,8 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                     <select name="product_id[]" class="form-select border-secondary product-select" required>
                                         <option value="">Select Product</option>
                                         <?php 
-                                        $prods = $conn->query("SELECT id, name, rate FROM products");
+                                        $dept_id = (int)$_SESSION['dept_id'];
+                                        $prods = $conn->query("SELECT id, name, rate FROM products WHERE dept_id = $dept_id");
                                         while($p = $prods->fetch_assoc()) {
                                             $sel = ($iit['product_id'] == $p['id']) ? 'selected' : '';
                                             echo "<option value='{$p['id']}' data-rate='{$p['rate']}' $sel>{$p['name']}</option>";
@@ -268,7 +272,8 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                     <select name="product_id[]" class="form-select border-secondary product-select" required>
                                         <option value="">Select Product</option>
                                         <?php 
-                                        $prods = $conn->query("SELECT id, name, rate FROM products");
+                                        $dept_id = (int)$_SESSION['dept_id'];
+                                        $prods = $conn->query("SELECT id, name, rate FROM products WHERE dept_id = $dept_id");
                                         while($p = $prods->fetch_assoc()) echo "<option value='{$p['id']}' data-rate='{$p['rate']}'>{$p['name']}</option>";
                                         ?>
                                     </select>
