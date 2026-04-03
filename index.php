@@ -7,14 +7,23 @@ $total_sales = $conn->query("SELECT SUM(total_amount) FROM outwards")->fetch_row
 $total_purchase = $conn->query("SELECT SUM(total_amount) FROM inwards")->fetch_row()[0] ?? 0;
 $profit = $total_sales - $total_purchase;
 
+// Dept Breakdown
+$sales_by_dept = [];
+$res_s = $conn->query("SELECT dept_id, SUM(total_amount) as total FROM outwards GROUP BY dept_id");
+while($row = $res_s->fetch_assoc()) $sales_by_dept[$row['dept_id']] = $row['total'];
+
+$purchase_by_dept = [];
+$res_p = $conn->query("SELECT dept_id, SUM(total_amount) as total FROM inwards GROUP BY dept_id");
+while($row = $res_p->fetch_assoc()) $purchase_by_dept[$row['dept_id']] = $row['total'];
+
 // Low Stock Alert
 $low_stock = $conn->query("SELECT * FROM products WHERE current_stock < 10 LIMIT 5");
 
 // Recent Activities (Combined Inward/Outward)
 $recent_activities = $conn->query("
-    (SELECT 'Purchase' as type, date, total_amount, party_id FROM inwards)
+    (SELECT 'Purchase' as type, date, total_amount, party_id, dept_id FROM inwards)
     UNION
-    (SELECT 'Sales' as type, date, total_amount, party_id FROM outwards)
+    (SELECT 'Sales' as type, date, total_amount, party_id, dept_id FROM outwards)
     ORDER BY date DESC LIMIT 5
 ");
 ?>
@@ -88,6 +97,32 @@ $recent_activities = $conn->query("
     </div>
 </div>
 
+<div class="row g-4 mb-4" data-aos="fade-up" data-aos-delay="400">
+    <div class="col-12 mb-2">
+        <h6 class="text-secondary-themed fw-bold text-uppercase small"><i class="fa fa-layer-group me-2"></i>Department Performance Breakdown</h6>
+    </div>
+    <?php foreach($departments as $id => $name): 
+        $s = $sales_by_dept[$id] ?? 0;
+        $p = $purchase_by_dept[$id] ?? 0;
+    ?>
+    <div class="col-md-4">
+        <div class="card card-bajot border-0 shadow-sm" style="border-left: 4px solid <?php echo ($id==1?'var(--gold)':($id==2?'#007aff':'#4cd964')); ?> !important;">
+            <div class="card-body p-3">
+                <h6 class="fw-bold mb-3 small text-uppercase" style="color: <?php echo ($id==1?'var(--gold)':($id==2?'#007aff':'#4cd964')); ?>;"><?php echo $name; ?></h6>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="extra-small text-secondary-themed">Sales:</span>
+                    <span class="small fw-bold <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo format_currency($s); ?></span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="extra-small text-secondary-themed">Purchase:</span>
+                    <span class="small fw-bold <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo format_currency($p); ?></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card card-bajot mb-4">
@@ -126,7 +161,12 @@ $recent_activities = $conn->query("
                                     </span>
                                 </td>
                                 <td><?php echo date('d M, Y', strtotime($activity['date'])); ?></td>
-                                <td><?php echo $party_name; ?></td>
+                                <td>
+                                    <div>
+                                        <p class="mb-0 fw-bold <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo $party_name; ?></p>
+                                        <small class="extra-small text-gold"><i class="fa fa-building-user me-1"></i><?php echo $departments[$activity['dept_id']] ?? 'N/A'; ?></small>
+                                    </div>
+                                </td>
                                 <td class="fw-bold"><?php echo format_currency($activity['total_amount']); ?></td>
                             </tr>
                             <?php endwhile; ?>

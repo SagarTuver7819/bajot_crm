@@ -53,7 +53,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
             $qty_kgs = (float)$qty_kgs_array[$key];
             $rate = (float)$rates[$key];
             
-            $item_total = ($unit == 'Pcs') ? ($qty_pcs * $rate) : ($qty_kgs * $rate);
+            $dept_id = (int)$_SESSION['dept_id'];
+            if ($dept_id === 1) {
+                // Aluminium Section: Always Weight * Rate
+                $item_total = $qty_kgs * $rate;
+            } else {
+                $item_total = ($unit == 'Pcs') ? ($qty_pcs * $rate) : ($qty_kgs * $rate);
+            }
             
             $sub_total += $item_total;
             
@@ -335,11 +341,17 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
             const qty_kgs = parseFloat(row.querySelector('.qty-kgs-input').value) || 0;
             const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
             
+            const deptId = <?php echo (int)$_SESSION['dept_id']; ?>;
             let total = 0;
-            if (unit === 'Pcs') {
-                total = qty_pcs * rate;
-            } else {
+            if (deptId === 1) {
+                // Aluminium Section: Weight * Rate
                 total = qty_kgs * rate;
+            } else {
+                if (unit === 'Pcs') {
+                    total = qty_pcs * rate;
+                } else {
+                    total = qty_kgs * rate;
+                }
             }
             
             row.querySelector('.item-total').value = total.toFixed(2);
