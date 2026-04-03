@@ -1,0 +1,33 @@
+Table: products
+- id (int(11))
+- name (varchar(255))
+- unit (varchar(20))
+- total_pcs (decimal(15,2))
+- total_kgs (decimal(15,2))
+- rate (decimal(15,2))
+- gst_percent (decimal(5,2))
+- current_stock (decimal(15,2))
+- created_at (timestamp)
+
+Table: inward_items
+- id (int(11))
+- inward_id (int(11))
+- product_id (int(11))
+- unit (varchar(20))
+- qty_pcs (decimal(15,2))
+- qty_kgs (decimal(15,2))
+- qty (decimal(15,2))
+- rate (decimal(15,2))
+- total (decimal(15,2))
+
+Table: outward_items
+- id (int(11))
+- outward_id (int(11))
+- product_id (int(11))
+- unit (varchar(20))
+- qty_pcs (decimal(15,2))
+- qty_kgs (decimal(15,2))
+- qty (decimal(15,2))
+- rate (decimal(15,2))
+- total (decimal(15,2))
+
