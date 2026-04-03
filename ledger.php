@@ -115,9 +115,10 @@ if ($party_id) {
 
 <div class="print-only ledger-header">
     <?php if (!empty($settings['company_logo']) && file_exists($settings['company_logo'])): ?>
-        <img src="<?php echo $settings['company_logo']; ?>" alt="Logo" style="height: 60px; margin-bottom: 10px;">
+        <img src="<?php echo $settings['company_logo']; ?>" alt="Logo" style="height: 100px; margin-bottom: 10px;">
+    <?php else: ?>
+        <h2><?php echo strtoupper($settings['company_name'] ?? ''); ?></h2>
     <?php endif; ?>
-    <h2><?php echo strtoupper($settings['company_name'] ?? ''); ?></h2>
     <p><?php echo $settings['company_address'] ?? ''; ?></p>
     <hr>
     <h4>PARTY LEDGER: <?php echo strtoupper($party['name']); ?></h4>
