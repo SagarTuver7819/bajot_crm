@@ -13,7 +13,7 @@ if ($type == 'sales') {
     $res = $conn->query("SELECT o.*, p.name, p.address, p.mobile FROM outwards o JOIN parties p ON o.party_id = p.id WHERE o.id = $id");
     $data = $res->fetch_assoc();
     $items = $conn->query("SELECT oi.*, p.name as prod_name FROM outward_items oi JOIN products p ON oi.product_id = p.id WHERE oi.outward_id = $id");
-    $title = "SALES INVOICE";
+    $title = "ESTIMATE";
 } elseif ($type == 'purchase') {
     $res = $conn->query("SELECT i.*, p.name, p.address, p.mobile FROM inwards i JOIN parties p ON i.party_id = p.id WHERE i.id = $id");
     $data = $res->fetch_assoc();
@@ -34,7 +34,7 @@ if (!$data) die("Record not found");
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Print | Bajot CRM</title>
+    <title>Print | Kaizer CRM</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 0; padding: 20px; }
         .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; box-shadow: 0 0 10px rgba(0, 0, 0, 0.15); font-size: 14px; line-height: 24px; color: #555; }
@@ -64,9 +64,10 @@ if (!$data) die("Record not found");
         <div class="header">
             <div>
                 <?php if (!empty($s['company_logo']) && file_exists($s['company_logo'])): ?>
-                    <img src="<?php echo $s['company_logo']; ?>" alt="Logo" style="height: 70px; margin-bottom: 10px;">
+                    <img src="<?php echo $s['company_logo']; ?>" alt="Logo" style="height: 100px; margin-bottom: 10px;">
+                <?php else: ?>
+                    <h1><?php echo strtoupper($s['company_name']); ?></h1>
                 <?php endif; ?>
-                <h1><?php echo strtoupper($s['company_name']); ?></h1>
                 <p><?php echo $s['company_address']; ?></p>
             </div>
             <div style="text-align: right;">

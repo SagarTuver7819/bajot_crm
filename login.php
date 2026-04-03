@@ -37,7 +37,7 @@ $s = get_settings();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authorized Login | Bajot CRM</title>
+    <title>Authorized Login | Kaizer CRM</title>
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Google Fonts -->
@@ -190,7 +190,7 @@ $s = get_settings();
             <?php if (!empty($s['company_logo']) && file_exists($s['company_logo'])): ?>
                 <img src="<?php echo $s['company_logo']; ?>" alt="Logo">
             <?php endif; ?>
-            <h1>BAJOT EXTRUSION</h1>
+            <h1>KAIZER CRM</h1>
             <p>Authorized Software Access</p>
         </div>
         
@@ -220,7 +220,7 @@ $s = get_settings();
         </form>
 
         <div class="footer-text">
-            &copy; <?php echo date('Y'); ?> Bajot Extrusion Pvt. Ltd. | Industrial CRM
+            &copy; <?php echo date('Y'); ?> Kaizer | Industrial CRM
         </div>
     </div>
 

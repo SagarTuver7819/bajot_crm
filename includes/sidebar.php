@@ -2,10 +2,10 @@
     <?php $s = get_settings(); ?>
     <a href="index.php" class="logo-area text-center py-4 cursor-pointer text-decoration-none d-block">
         <?php if (!empty($s['company_logo']) && file_exists($s['company_logo'])): ?>
-            <img src="<?php echo $s['company_logo']; ?>" alt="Logo" class="img-fluid mb-2 px-4" style="max-height: 80px; object-fit: contain;">
+            <img src="<?php echo $s['company_logo']; ?>" alt="Logo" class="img-fluid mb-2 px-4" style="max-height: 80px; width: 100%; object-fit: contain;">
         <?php else: ?>
-            <h2 class="mb-0" style="color: var(--gold); letter-spacing: 2px;">BAJOT</h2>
-            <p class="text-muted extra-small small mb-0">E X T R U S I O N</p>
+            <h2 class="mb-0" style="color: var(--gold); letter-spacing: 2px;">KAIZER</h2>
+            <p class="text-muted extra-small small mb-0">C R M</p>
         <?php endif; ?>
     </a>
     
