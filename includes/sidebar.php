@@ -37,6 +37,14 @@
         <a href="vouchers.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'vouchers.php') ? 'active' : ''; ?>">
             <i class="fa fa-receipt"></i> <span>Cash / Bank</span>
         </a>
+
+        <a href="expense_category.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'expense_category.php') ? 'active' : ''; ?>">
+            <i class="fa fa-list-alt"></i> <span>Expense Category</span>
+        </a>
+        
+        <a href="expenses.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'expenses.php') ? 'active' : ''; ?>">
+            <i class="fa fa-wallet"></i> <span>Expense Management</span>
+        </a>
         
         <a href="employees.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'employees.php') ? 'active' : ''; ?>">
             <i class="fa fa-user-tie"></i> <span>Staff & HR</span>
