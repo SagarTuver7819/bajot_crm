@@ -10,8 +10,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
     $party_id = (int)$_POST['party_id'];
     $date = trim($_POST['date']);
     $bill_no = trim($_POST['bill_no']);
+    $narration = trim($_POST['narration']);
     
     $product_ids = $_POST['product_id'];
+    $colors = $_POST['color'] ?? [];
     $units = $_POST['unit'];
     $qty_pcs_array = $_POST['qty_pcs'];
     $qty_kgs_array = $_POST['qty_kgs'];
@@ -34,15 +36,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
             $conn->query("DELETE FROM outward_items WHERE outward_id=$edit_id");
             
             // Update main record
-            $stmt = $conn->prepare("UPDATE outwards SET party_id=?, date=?, bill_no=? WHERE id=?");
-            $stmt->bind_param("issi", $party_id, $date, $bill_no, $edit_id);
+            $stmt = $conn->prepare("UPDATE outwards SET party_id=?, date=?, bill_no=?, narration=? WHERE id=?");
+            $stmt->bind_param("isssi", $party_id, $date, $bill_no, $narration, $edit_id);
             $stmt->execute();
             $outward_id = $edit_id;
         } else {
             // Insert into outwards
             $dept_id = (int)$_SESSION['dept_id'];
-            $stmt = $conn->prepare("INSERT INTO outwards (dept_id, party_id, date, bill_no) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("iiss", $dept_id, $party_id, $date, $bill_no);
+            $stmt = $conn->prepare("INSERT INTO outwards (dept_id, party_id, date, bill_no, narration) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("iisss", $dept_id, $party_id, $date, $bill_no, $narration);
             $stmt->execute();
             $outward_id = $conn->insert_id;
         }
@@ -63,9 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
             
             $sub_total += $item_total;
             
+            $color = $colors[$key] ?? '';
             // Insert into outward_items
-            $stmt_item = $conn->prepare("INSERT INTO outward_items (outward_id, product_id, unit, qty_pcs, qty_kgs, rate, total) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt_item->bind_param("iisdddd", $outward_id, $p_id, $unit, $qty_pcs, $qty_kgs, $rate, $item_total);
+            $stmt_item = $conn->prepare("INSERT INTO outward_items (outward_id, product_id, color, unit, qty_pcs, qty_kgs, rate, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_item->bind_param("iisssddd", $outward_id, $p_id, $color, $unit, $qty_pcs, $qty_kgs, $rate, $item_total);
             $stmt_item->execute();
             
             // Update Stock (Decrease)
@@ -235,8 +238,11 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                     <table class="table table-bordered border-secondary" id="itemsTable">
                         <thead class="bg-dark">
                             <tr>
-                                <th style="width: 30%;">Product</th>
-                                <th style="width: 10%;">Unit</th>
+                                <th style="width: 25%;">Product</th>
+                                <th style="width: 10%; <?php echo ($_SESSION['dept_id'] == 2) ? 'display: none;' : ''; ?>">Unit</th>
+                                <?php if ($_SESSION['dept_id'] == 2): ?>
+                                <th style="width: 15%;">Color</th>
+                                <?php endif; ?>
                                 <th style="width: 10%; <?php echo ($_SESSION['dept_id'] == 2) ? 'display: none;' : ''; ?>">Qty/Pcs</th>
                                 <th style="width: 15%;">Weight/Kg</th>
                                 <th style="width: 15%;">Rate (₹)</th>
@@ -260,12 +266,17 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                         ?>
                                     </select>
                                 </td>
-                                <td>
+                                <td <?php echo ($_SESSION['dept_id'] == 2) ? 'style="display: none;"' : ''; ?>>
                                     <select name="unit[]" class="form-select border-secondary unit-select">
                                         <option value="Pcs" <?php echo ($oit['unit'] == 'Pcs') ? 'selected' : ''; ?>>Pcs</option>
                                         <option value="Kgs" <?php echo ($oit['unit'] == 'Kgs' || $_SESSION['dept_id'] == 2) ? 'selected' : ''; ?>><?php echo ($_SESSION['dept_id'] == 2) ? 'kg' : 'Kgs'; ?></option>
                                     </select>
                                 </td>
+                                <?php if ($_SESSION['dept_id'] == 2): ?>
+                                <td><input type="text" name="color[]" class="form-control" value="<?php echo $oit['color']; ?>" placeholder="Color"></td>
+                                <?php else: ?>
+                                    <input type="hidden" name="color[]" value="">
+                                <?php endif; ?>
                                 <td <?php echo ($_SESSION['dept_id'] == 2) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="<?php echo $oit['qty_pcs']; ?>"></td>
                                 <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="<?php echo $oit['qty_kgs']; ?>"></td>
                                 <td><input type="number" step="0.01" name="rate[]" class="form-control rate-input" required value="<?php echo $oit['rate']; ?>"></td>
@@ -284,12 +295,17 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                         ?>
                                     </select>
                                 </td>
-                                <td>
+                                <td <?php echo ($_SESSION['dept_id'] == 2) ? 'style="display: none;"' : ''; ?>>
                                     <select name="unit[]" class="form-select border-secondary unit-select">
                                         <option value="Pcs">Pcs</option>
                                         <option value="Kgs" <?php echo ($_SESSION['dept_id'] == 2) ? 'selected' : ''; ?>><?php echo ($_SESSION['dept_id'] == 2) ? 'kg' : 'Kgs'; ?></option>
                                     </select>
                                 </td>
+                                <?php if ($_SESSION['dept_id'] == 2): ?>
+                                <td><input type="text" name="color[]" class="form-control" placeholder="Color"></td>
+                                <?php else: ?>
+                                    <input type="hidden" name="color[]" value="">
+                                <?php endif; ?>
                                 <td <?php echo ($_SESSION['dept_id'] == 2) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="0"></td>
                                 <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="0"></td>
                                 <td><input type="number" step="0.01" name="rate[]" class="form-control rate-input" required value="0"></td>
@@ -319,12 +335,20 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                     </div>
                 </div>
 
-                <div class="text-end mt-4">
-                    <?php if ($mode !== 'view'): ?>
-                        <button type="submit" name="save_outward" class="btn btn-gold px-5"><?php echo ($mode === 'edit') ? 'UPDATE' : 'SAVE'; ?> SALES ENTRY <i class="fa fa-check ms-1"></i></button>
-                    <?php else: ?>
-                        <a href="print_invoice.php?type=sales&id=<?php echo $outward['id']; ?>" class="btn btn-outline-warning px-5" target="_blank">PRINT INVOICE <i class="fa fa-print ms-1"></i></a>
-                    <?php endif; ?>
+                <div class="row align-items-center mt-4">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label class="form-label text-theme small fw-bold">Narration / Notes</label>
+                            <textarea name="narration" class="form-control" rows="2" placeholder="Enter narration or notes here..."><?php echo $outward ? $outward['narration'] : ''; ?></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <?php if ($mode !== 'view'): ?>
+                            <button type="submit" name="save_outward" class="btn btn-gold px-5"><?php echo ($mode === 'edit') ? 'UPDATE' : 'SAVE'; ?> SALES ENTRY <i class="fa fa-check ms-1"></i></button>
+                        <?php else: ?>
+                            <a href="print_invoice.php?type=sales&id=<?php echo $outward['id']; ?>" class="btn btn-outline-warning px-5" target="_blank">PRINT INVOICE <i class="fa fa-print ms-1"></i></a>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </form>
         </div>
@@ -373,6 +397,7 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
             const newRow = table.rows[0].cloneNode(true);
             newRow.querySelectorAll('input').forEach(i => {
                 if (i.classList.contains('item-total')) i.value = '0.00';
+                else if (i.name === 'color[]') i.value = '';
                 else i.value = '0';
             });
             newRow.querySelector('.unit-select').selectedIndex = 0;

@@ -90,11 +90,14 @@ if (!$data) die("Record not found");
             <thead>
                 <tr>
                     <th>Item Description</th>
-                    <th>Unit</th>
+                    <th style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?>">Unit</th>
+                    <?php if ($data['dept_id'] == 2): ?>
+                    <th>Color</th>
+                    <?php endif; ?>
                     <?php if ($data['dept_id'] != 2): ?>
                     <th>Pcs</th>
                     <?php endif; ?>
-                    <th>Kgs</th>
+                    <th><?php echo ($data['dept_id'] == 2) ? 'Weight' : 'Kgs'; ?></th>
                     <th>Rate</th>
                     <th>Amount</th>
                 </tr>
@@ -103,11 +106,14 @@ if (!$data) die("Record not found");
                 <?php while($item = $items->fetch_assoc()): ?>
                 <tr>
                     <td><?php echo $item['prod_name']; ?></td>
-                    <td><?php echo ($data['dept_id'] == 2) ? 'kg' : $item['unit']; ?></td>
+                    <td style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?>"><?php echo $item['unit']; ?></td>
+                    <?php if ($data['dept_id'] == 2): ?>
+                    <td><?php echo $item['color']; ?></td>
+                    <?php endif; ?>
                     <?php if ($data['dept_id'] != 2): ?>
                     <td><?php echo $item['qty_pcs']; ?></td>
                     <?php endif; ?>
-                    <td><?php echo $item['qty_kgs']; ?></td>
+                    <td><?php echo $item['qty_kgs']; ?><?php echo ($data['dept_id'] == 2) ? ' kg' : ''; ?></td>
                     <td><?php echo format_currency($item['rate']); ?></td>
                     <td><?php echo format_currency($item['total']); ?></td>
                 </tr>
@@ -119,6 +125,13 @@ if (!$data) die("Record not found");
                 <strong>Description:</strong><br>
                 <?php echo $data['description'] ?: 'No details provided.'; ?>
             </div>
+        <?php endif; ?>
+
+        <?php if (!empty($data['narration'])): ?>
+        <div style="margin-top: 20px; padding: 10px; border: 1px dashed #C9A14A; background: #fffcf5;">
+            <strong>Narration:</strong><br>
+            <?php echo nl2br(htmlspecialchars($data['narration'])); ?>
+        </div>
         <?php endif; ?>
 
         <div class="total-box">
