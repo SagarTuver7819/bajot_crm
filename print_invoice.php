@@ -91,7 +91,9 @@ if (!$data) die("Record not found");
                 <tr>
                     <th>Item Description</th>
                     <th>Unit</th>
+                    <?php if ($data['dept_id'] != 2): ?>
                     <th>Pcs</th>
+                    <?php endif; ?>
                     <th>Kgs</th>
                     <th>Rate</th>
                     <th>Amount</th>
@@ -101,8 +103,10 @@ if (!$data) die("Record not found");
                 <?php while($item = $items->fetch_assoc()): ?>
                 <tr>
                     <td><?php echo $item['prod_name']; ?></td>
-                    <td><?php echo $item['unit']; ?></td>
+                    <td><?php echo ($data['dept_id'] == 2) ? 'kg' : $item['unit']; ?></td>
+                    <?php if ($data['dept_id'] != 2): ?>
                     <td><?php echo $item['qty_pcs']; ?></td>
+                    <?php endif; ?>
                     <td><?php echo $item['qty_kgs']; ?></td>
                     <td><?php echo format_currency($item['rate']); ?></td>
                     <td><?php echo format_currency($item['total']); ?></td>

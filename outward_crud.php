@@ -54,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
             $rate = (float)$rates[$key];
             
             $dept_id = (int)$_SESSION['dept_id'];
-            if ($dept_id === 1) {
-                // Aluminium Section: Always Weight * Rate
+            if ($dept_id === 1 || $dept_id === 2) {
+                // Aluminium Section & Powder Coating: Always Weight * Rate
                 $item_total = $qty_kgs * $rate;
             } else {
                 $item_total = ($unit == 'Pcs') ? ($qty_pcs * $rate) : ($qty_kgs * $rate);
@@ -237,7 +237,7 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                             <tr>
                                 <th style="width: 30%;">Product</th>
                                 <th style="width: 10%;">Unit</th>
-                                <th style="width: 10%;">Qty/Pcs</th>
+                                <th style="width: 10%; <?php echo ($_SESSION['dept_id'] == 2) ? 'display: none;' : ''; ?>">Qty/Pcs</th>
                                 <th style="width: 15%;">Weight/Kg</th>
                                 <th style="width: 15%;">Rate (₹)</th>
                                 <th style="width: 15%;">Total</th>
@@ -263,10 +263,10 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                 <td>
                                     <select name="unit[]" class="form-select border-secondary unit-select">
                                         <option value="Pcs" <?php echo ($oit['unit'] == 'Pcs') ? 'selected' : ''; ?>>Pcs</option>
-                                        <option value="Kgs" <?php echo ($oit['unit'] == 'Kgs') ? 'selected' : ''; ?>>Kgs</option>
+                                        <option value="Kgs" <?php echo ($oit['unit'] == 'Kgs' || $_SESSION['dept_id'] == 2) ? 'selected' : ''; ?>><?php echo ($_SESSION['dept_id'] == 2) ? 'kg' : 'Kgs'; ?></option>
                                     </select>
                                 </td>
-                                <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="<?php echo $oit['qty_pcs']; ?>"></td>
+                                <td <?php echo ($_SESSION['dept_id'] == 2) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="<?php echo $oit['qty_pcs']; ?>"></td>
                                 <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="<?php echo $oit['qty_kgs']; ?>"></td>
                                 <td><input type="number" step="0.01" name="rate[]" class="form-control rate-input" required value="<?php echo $oit['rate']; ?>"></td>
                                 <td><input type="text" class="form-control item-total" readonly value="<?php echo $oit['total']; ?>"></td>
@@ -287,10 +287,10 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                 <td>
                                     <select name="unit[]" class="form-select border-secondary unit-select">
                                         <option value="Pcs">Pcs</option>
-                                        <option value="Kgs">Kgs</option>
+                                        <option value="Kgs" <?php echo ($_SESSION['dept_id'] == 2) ? 'selected' : ''; ?>><?php echo ($_SESSION['dept_id'] == 2) ? 'kg' : 'Kgs'; ?></option>
                                     </select>
                                 </td>
-                                <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="0"></td>
+                                <td <?php echo ($_SESSION['dept_id'] == 2) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="0"></td>
                                 <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="0"></td>
                                 <td><input type="number" step="0.01" name="rate[]" class="form-control rate-input" required value="0"></td>
                                 <td><input type="text" class="form-control item-total" readonly value="0.00"></td>
@@ -343,8 +343,8 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
             
             const deptId = <?php echo (int)$_SESSION['dept_id']; ?>;
             let total = 0;
-            if (deptId === 1) {
-                // Aluminium Section: Weight * Rate
+            if (deptId === 1 || deptId === 2) {
+                // Aluminium Section & Powder Coating: Weight * Rate
                 total = qty_kgs * rate;
             } else {
                 if (unit === 'Pcs') {

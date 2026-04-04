@@ -128,17 +128,22 @@ if (isset($_GET['delete'])) {
                 <?php if ($vtype !== 'expense'): ?>
                 <div class="mb-3">
                     <label class="form-label">Select Party / Person</label>
-                    <select name="party_id" class="form-select border-secondary">
-                        <option value="">Select Party</option>
-                        <?php 
-                        $types = ($vtype == 'receipt') ? "'customer'" : "'supplier'";
-                        $ps = $conn->query("SELECT id, name FROM parties WHERE type=$types");
-                        while($p = $ps->fetch_assoc()) {
-                            $sel = ($voucher && $voucher['party_id'] == $p['id']) ? 'selected' : '';
-                            echo "<option value='{$p['id']}' $sel>{$p['name']}</option>";
-                        }
-                        ?>
-                    </select>
+                    <div class="input-group">
+                        <select name="party_id" class="form-select border-secondary">
+                            <option value="">Select Party</option>
+                            <?php 
+                            $types = ($vtype == 'receipt') ? "'customer'" : "'supplier'";
+                            $ps = $conn->query("SELECT id, name FROM parties WHERE type=$types");
+                            while($p = $ps->fetch_assoc()) {
+                                $sel = ($voucher && $voucher['party_id'] == $p['id']) ? 'selected' : '';
+                                echo "<option value='{$p['id']}' $sel>{$p['name']}</option>";
+                            }
+                            ?>
+                        </select>
+                        <button type="button" class="btn btn-outline-gold" data-bs-toggle="modal" data-bs-target="#quickAddPartyModal" onclick="document.getElementById('quick_party_type').value='<?php echo ($vtype == 'receipt') ? 'customer' : 'supplier'; ?>';">
+                            <i class="fa fa-plus"></i>
+                        </button>
+                    </div>
                 </div>
                 <?php endif; ?>
 
@@ -160,4 +165,5 @@ if (isset($_GET['delete'])) {
     </div>
 <?php endif; ?>
 
+<?php include_once 'includes/quick_party_modal.php'; ?>
 <?php require_once 'includes/footer.php'; ?>
