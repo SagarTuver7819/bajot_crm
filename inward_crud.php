@@ -242,17 +242,20 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                             <?php if ($inward_items): foreach($inward_items as $iit): ?>
                             <tr class="item-row">
                                 <td>
-                                    <select name="product_id[]" class="form-select border-secondary product-select" required>
-                                        <option value="">Select Product</option>
-                                        <?php 
-                                        $dept_id = (int)$_SESSION['dept_id'];
-                                        $prods = $conn->query("SELECT id, name, rate FROM products WHERE dept_id = $dept_id");
-                                        while($p = $prods->fetch_assoc()) {
-                                            $sel = ($iit['product_id'] == $p['id']) ? 'selected' : '';
-                                            echo "<option value='{$p['id']}' data-rate='{$p['rate']}' $sel>{$p['name']}</option>";
-                                        }
-                                        ?>
-                                    </select>
+                                    <div class="input-group">
+                                        <select name="product_id[]" class="form-select border-secondary product-select" required>
+                                            <option value="">Select Product</option>
+                                            <?php 
+                                            $dept_id = (int)$_SESSION['dept_id'];
+                                            $prods = $conn->query("SELECT id, name, rate FROM products WHERE dept_id = $dept_id");
+                                            while($p = $prods->fetch_assoc()) {
+                                                $sel = ($iit['product_id'] == $p['id']) ? 'selected' : '';
+                                                echo "<option value='{$p['id']}' data-rate='{$p['rate']}' $sel>{$p['name']}</option>";
+                                            }
+                                            ?>
+                                        </select>
+                                        <button type="button" class="btn btn-outline-gold" data-bs-toggle="modal" data-bs-target="#quickAddProductModal"><i class="fa fa-plus"></i></button>
+                                    </div>
                                 </td>
                                 <td>
                                     <select name="unit[]" class="form-select border-secondary unit-select">
@@ -269,14 +272,17 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                             <?php endforeach; else: ?>
                             <tr class="item-row">
                                 <td>
-                                    <select name="product_id[]" class="form-select border-secondary product-select" required>
-                                        <option value="">Select Product</option>
-                                        <?php 
-                                        $dept_id = (int)$_SESSION['dept_id'];
-                                        $prods = $conn->query("SELECT id, name, rate FROM products WHERE dept_id = $dept_id");
-                                        while($p = $prods->fetch_assoc()) echo "<option value='{$p['id']}' data-rate='{$p['rate']}'>{$p['name']}</option>";
-                                        ?>
-                                    </select>
+                                    <div class="input-group">
+                                        <select name="product_id[]" class="form-select border-secondary product-select" required>
+                                            <option value="">Select Product</option>
+                                            <?php 
+                                            $dept_id = (int)$_SESSION['dept_id'];
+                                            $prods = $conn->query("SELECT id, name, rate FROM products WHERE dept_id = $dept_id");
+                                            while($p = $prods->fetch_assoc()) echo "<option value='{$p['id']}' data-rate='{$p['rate']}'>{$p['name']}</option>";
+                                            ?>
+                                        </select>
+                                        <button type="button" class="btn btn-outline-gold" data-bs-toggle="modal" data-bs-target="#quickAddProductModal"><i class="fa fa-plus"></i></button>
+                                    </div>
                                 </td>
                                 <td>
                                     <select name="unit[]" class="form-select border-secondary unit-select">
@@ -393,4 +399,5 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
 <?php endif; ?>
 
 <?php include_once 'includes/quick_party_modal.php'; ?>
+<?php include_once 'includes/quick_product_modal.php'; ?>
 <?php require_once 'includes/footer.php'; ?>
