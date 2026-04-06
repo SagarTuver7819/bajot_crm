@@ -32,7 +32,7 @@ $recent_activities = $conn->query("
     <div class="row align-items-center">
         <div class="col-md-8">
             <h3 class="fw-bold text-theme mb-1">Corporate Dashboard</h3>
-            <p class="text-secondary-themed small mb-0">Welcome back, <span class="text-gold"><?php echo $_SESSION['name']; ?></span>. Here is what's happening today.</p>
+            <p class="text-secondary-themed small mb-0">Welcome back, <span class="text-gold"><?php echo $_SESSION['name'] ?? 'User'; ?></span>. Here is what's happening today.</p>
         </div>
         <div class="col-md-4 text-md-end mt-3 mt-md-0">
             <div class="d-inline-flex align-items-center bg-dark-card p-2 px-3 rounded-pill border border-secondary shadow-sm">
