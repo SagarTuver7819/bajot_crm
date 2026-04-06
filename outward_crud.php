@@ -31,7 +31,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
             // Recover Old Stock & Delete Old Items
             $old_items = $conn->query("SELECT * FROM outward_items WHERE outward_id=$edit_id");
             while($oit = $old_items->fetch_assoc()) {
-                $conn->query("UPDATE products SET total_pcs = total_pcs + " . $oit['qty_pcs'] . ", total_kgs = total_kgs + " . $oit['qty_kgs'] . ", current_stock = CASE WHEN unit = 'Pcs' THEN total_pcs ELSE total_kgs END WHERE id = " . $oit['product_id']);
+                $p_info = $conn->query("SELECT name FROM products WHERE id = " . $oit['product_id'])->fetch_assoc();
+                $p_name = strtoupper($p_info['name'] ?? '');
+                $op = '-'; 
+                if ((strpos($p_name, 'METALLIC') !== false && strpos($p_name, 'POWDER') !== false) || (strpos($p_name, 'REGULAR') !== false && strpos($p_name, 'POWDER') !== false)) {
+                    $op = '-'; 
+                } else {
+                    $op = '+';
+                }
+                $conn->query("UPDATE products SET total_pcs = total_pcs $op " . $oit['qty_pcs'] . ", total_kgs = total_kgs $op " . $oit['qty_kgs'] . ", current_stock = CASE WHEN unit = 'Pcs' THEN total_pcs ELSE total_kgs END WHERE id = " . $oit['product_id']);
             }
             $conn->query("DELETE FROM outward_items WHERE outward_id=$edit_id");
             
@@ -71,8 +79,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
             $stmt_item->bind_param("iisssddd", $outward_id, $p_id, $color, $unit, $qty_pcs, $qty_kgs, $rate, $item_total);
             $stmt_item->execute();
             
-            // Update Stock (Decrease)
-            $conn->query("UPDATE products SET total_pcs = total_pcs - $qty_pcs, total_kgs = total_kgs - $qty_kgs, current_stock = CASE WHEN unit = 'Pcs' THEN total_pcs ELSE total_kgs END WHERE id = $p_id");
+            // Update Stock
+            $p_info = $conn->query("SELECT name FROM products WHERE id = $p_id")->fetch_assoc();
+            $p_name = strtoupper($p_info['name'] ?? '');
+            if ((strpos($p_name, 'METALLIC') !== false && strpos($p_name, 'POWDER') !== false) || (strpos($p_name, 'REGULAR') !== false && strpos($p_name, 'POWDER') !== false)) {
+                // Plus for these specific items
+                $conn->query("UPDATE products SET total_pcs = total_pcs + $qty_pcs, total_kgs = total_kgs + $qty_kgs, current_stock = CASE WHEN unit = 'Pcs' THEN total_pcs ELSE total_kgs END WHERE id = $p_id");
+            } else {
+                // Decrease for others
+                $conn->query("UPDATE products SET total_pcs = total_pcs - $qty_pcs, total_kgs = total_kgs - $qty_kgs, current_stock = CASE WHEN unit = 'Pcs' THEN total_pcs ELSE total_kgs END WHERE id = $p_id");
+            }
         }
         
         $total_amount = $sub_total;
@@ -91,7 +107,13 @@ if (isset($_GET['delete'])) {
     // Reduct stock before deleting? PRD says stock decrease on outward. So increase on delete.
     $items = $conn->query("SELECT * FROM outward_items WHERE outward_id=$id");
     while($item = $items->fetch_assoc()) {
-        $conn->query("UPDATE products SET total_pcs = total_pcs + " . $item['qty_pcs'] . ", total_kgs = total_kgs + " . $item['qty_kgs'] . ", current_stock = CASE WHEN unit = 'Pcs' THEN total_pcs ELSE total_kgs END WHERE id = " . $item['product_id']);
+        $p_info = $conn->query("SELECT name FROM products WHERE id = " . $item['product_id'])->fetch_assoc();
+        $p_name = strtoupper($p_info['name'] ?? '');
+        if ((strpos($p_name, 'METALLIC') !== false && strpos($p_name, 'POWDER') !== false) || (strpos($p_name, 'REGULAR') !== false && strpos($p_name, 'POWDER') !== false)) {
+            $conn->query("UPDATE products SET total_pcs = total_pcs - " . $item['qty_pcs'] . ", total_kgs = total_kgs - " . $item['qty_kgs'] . ", current_stock = CASE WHEN unit = 'Pcs' THEN total_pcs ELSE total_kgs END WHERE id = " . $item['product_id']);
+        } else {
+            $conn->query("UPDATE products SET total_pcs = total_pcs + " . $item['qty_pcs'] . ", total_kgs = total_kgs + " . $item['qty_kgs'] . ", current_stock = CASE WHEN unit = 'Pcs' THEN total_pcs ELSE total_kgs END WHERE id = " . $item['product_id']);
+        }
     }
     $conn->query("DELETE FROM outwards WHERE id=$id");
     redirect('outward_crud.php?deleted=1');

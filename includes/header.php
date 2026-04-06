@@ -95,7 +95,7 @@ if ($current_page !== 'index.php' && $current_page !== 'login.php' && $current_p
                     <div>
                         <h3 class="fw-bold mb-0" style="color: var(--gold); font-size: 1.1rem;"><?php echo $page_title; ?></h3>
                         <p class="text-secondary-themed extra-small mb-0 d-none d-md-block">
-                            Welcome back, <span class="<?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo $_SESSION['name']; ?></span>
+                            Welcome back, <span class="<?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo $_SESSION['name'] ?? 'User'; ?></span>
                             <?php if(isset($_SESSION['dept_name'])): ?>
                                 <span class="mx-2 text-secondary">|</span> 
                                 <span class="text-gold fw-bold"><i class="fa fa-layer-group me-1"></i><?php echo $_SESSION['dept_name']; ?></span>
@@ -118,8 +118,8 @@ if ($current_page !== 'index.php' && $current_page !== 'login.php' && $current_p
                                 <i class="fa fa-user-circle fs-4"></i>
                             </div>
                             <div class="profile-info d-none d-md-block">
-                                <p class="mb-0 fw-bold small"><?php echo $_SESSION['name']; ?></p>
-                                <p class="mb-0 text-muted extra-small" style="font-size: 0.7rem;"><?php echo strtoupper($_SESSION['role']); ?></p>
+                                <p class="mb-0 fw-bold small"><?php echo $_SESSION['name'] ?? 'User'; ?></p>
+                                <p class="mb-0 text-muted extra-small" style="font-size: 0.7rem;"><?php echo strtoupper($_SESSION['role'] ?? 'Admin'); ?></p>
                             </div>
                         </div>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="profileDropdown">
