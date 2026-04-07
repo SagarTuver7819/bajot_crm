@@ -57,7 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
         <div class="card card-bajot p-3 border-theme theme-gold-bg">
             <h6 class="text-muted small">Total Stock Value</h6>
             <h4 class="fw-bold text-theme"><?php 
-                $total_value_sum = $conn->query("SELECT SUM(rate * current_stock) FROM products WHERE dept_id = $dept_id")->fetch_row()[0];
+                $calc_col = ($dept_id == 1) ? 'total_kgs' : 'current_stock';
+                $total_value_sum = $conn->query("SELECT SUM(rate * $calc_col) FROM products WHERE dept_id = $dept_id")->fetch_row()[0];
                 echo format_currency($total_value_sum ?? 0); 
             ?></h4>
         </div>
@@ -99,11 +100,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
                         <td class="fw-bold <?php echo ($row['total_pcs'] < 10) ? 'text-danger' : 'text-theme'; ?>"><?php echo $row['total_pcs']; ?></td>
                         <td class="fw-bold <?php echo ($row['total_kgs'] < 10) ? 'text-danger' : 'text-theme'; ?>"><?php echo $row['total_kgs']; ?></td>
                         <td class="small"><?php echo format_currency($row['rate']); ?></td>
-                        <td class="fw-bold text-gold"><?php echo format_currency($row['rate'] * $row['current_stock']); ?></td>
+                        <?php 
+                            $row_val = ($dept_id == 1) ? ($row['rate'] * $row['total_kgs']) : ($row['rate'] * $row['current_stock']);
+                        ?>
+                        <td class="fw-bold text-gold"><?php echo format_currency($row_val); ?></td>
                         <td><?php echo $status; ?></td>
                     </tr>
                     <?php 
-                        $footer_total_value += ($row['rate'] * $row['current_stock']);
+                        $footer_total_value += $row_val;
                     endwhile; ?>
                 </tbody>
                 <tfoot class="border-top border-secondary">
