@@ -54,11 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card card-bajot p-3 border-theme">
-            <h6 class="text-muted small">Total Current Kgs</h6>
+        <div class="card card-bajot p-3 border-theme theme-gold-bg">
+            <h6 class="text-muted small">Total Stock Value</h6>
             <h4 class="fw-bold text-theme"><?php 
-                $total_kgs_sum = $conn->query("SELECT SUM(total_kgs) FROM products WHERE dept_id = $dept_id")->fetch_row()[0];
-                echo number_format($total_kgs_sum ?? 0, 2); 
+                $total_value_sum = $conn->query("SELECT SUM(rate * current_stock) FROM products WHERE dept_id = $dept_id")->fetch_row()[0];
+                echo format_currency($total_value_sum ?? 0); 
             ?></h4>
         </div>
     </div>
@@ -75,6 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
                         <th>Opening Stock</th>
                         <th>Current Pcs</th>
                         <th>Current Kgs</th>
+                        <th>Rate (₹)</th>
+                        <th>Stock Value (₹)</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -84,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
                     $res = $conn->query("SELECT * FROM products WHERE dept_id = $dept_id ORDER BY current_stock ASC");
                     $footer_total_pcs = 0;
                     $footer_total_kgs = 0;
+                    $footer_total_value = 0;
                     while ($row = $res->fetch_assoc()):
                         $status = ($row['current_stock'] < 10) ? '<span class="badge bg-danger">Low Stock</span>' : '<span class="badge bg-success">In Stock</span>';
                         $footer_total_pcs += $row['total_pcs'];
@@ -95,15 +98,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
                         <td class="small text-muted"><?php echo $row['opening_pcs']; ?> Pcs / <?php echo $row['opening_kgs']; ?> Kg</td>
                         <td class="fw-bold <?php echo ($row['total_pcs'] < 10) ? 'text-danger' : 'text-theme'; ?>"><?php echo $row['total_pcs']; ?></td>
                         <td class="fw-bold <?php echo ($row['total_kgs'] < 10) ? 'text-danger' : 'text-theme'; ?>"><?php echo $row['total_kgs']; ?></td>
+                        <td class="small"><?php echo format_currency($row['rate']); ?></td>
+                        <td class="fw-bold text-gold"><?php echo format_currency($row['rate'] * $row['current_stock']); ?></td>
                         <td><?php echo $status; ?></td>
                     </tr>
-                    <?php endwhile; ?>
+                    <?php 
+                        $footer_total_value += ($row['rate'] * $row['current_stock']);
+                    endwhile; ?>
                 </tbody>
                 <tfoot class="border-top border-secondary">
                     <tr class="fw-bold">
                         <td colspan="3" class="text-end">Total:</td>
                         <td class="text-theme"><?php echo number_format($footer_total_pcs, 2); ?></td>
                         <td class="text-theme"><?php echo number_format($footer_total_kgs, 2); ?></td>
+                        <td></td>
+                        <td class="text-gold"><?php echo format_currency($footer_total_value); ?></td>
                         <td></td>
                     </tr>
                 </tfoot>

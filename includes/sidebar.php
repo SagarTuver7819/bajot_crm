@@ -42,6 +42,10 @@
             <i class="fa fa-list-alt"></i> <span>Expense Category</span>
         </a>
         
+        <a href="expense_dashboard.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'expense_dashboard.php') ? 'active' : ''; ?>">
+            <i class="fa fa-chart-pie"></i> <span>Expense Dashboard</span>
+        </a>
+
         <a href="expenses.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'expenses.php') ? 'active' : ''; ?>">
             <i class="fa fa-wallet"></i> <span>Expense Management</span>
         </a>
