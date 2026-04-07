@@ -5,7 +5,9 @@ require_once 'includes/header.php';
 // Fetch Totals
 $total_sales = $conn->query("SELECT SUM(total_amount) FROM outwards")->fetch_row()[0] ?? 0;
 $total_purchase = $conn->query("SELECT SUM(total_amount) FROM inwards")->fetch_row()[0] ?? 0;
-$profit = $total_sales - $total_purchase;
+$dept_id = $_SESSION['dept_id'] ?? 0;
+$total_expenses = $conn->query("SELECT SUM(amount) FROM expenses WHERE dept_id = $dept_id")->fetch_row()[0] ?? 0;
+$profit = $total_sales - $total_purchase - $total_expenses;
 
 // Dept Breakdown
 $sales_by_dept = [];
@@ -26,6 +28,16 @@ $recent_activities = $conn->query("
     (SELECT 'Sales' as type, date, total_amount, party_id, dept_id FROM outwards)
     ORDER BY date DESC LIMIT 5
 ");
+
+// Expense Category Breakdown
+$dept_id = $_SESSION['dept_id'] ?? 0;
+$expense_categories_data = [];
+$res_exp = $conn->query("SELECT ec.name, SUM(e.amount) as total 
+                         FROM expenses e 
+                         JOIN expense_categories ec ON e.category_id = ec.id 
+                         WHERE e.dept_id = $dept_id 
+                         GROUP BY ec.name");
+while($row = $res_exp->fetch_assoc()) $expense_categories_data[] = $row;
 ?>
 
 <div class="dashboard-header mb-4" data-aos="fade-down">
@@ -44,7 +56,7 @@ $recent_activities = $conn->query("
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-md-4" data-aos="zoom-in" data-aos-delay="100">
+    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="100">
         <div class="card card-bajot border-0 shadow-premium overflow-hidden h-100">
             <div class="card-body p-4 position-relative">
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -61,7 +73,7 @@ $recent_activities = $conn->query("
             <div style="height: 4px; background: linear-gradient(90deg, #4cd964, #28a745);"></div>
         </div>
     </div>
-    <div class="col-md-4" data-aos="zoom-in" data-aos-delay="200">
+    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="200">
         <div class="card card-bajot border-0 shadow-premium overflow-hidden h-100">
             <div class="card-body p-4 position-relative">
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -78,7 +90,24 @@ $recent_activities = $conn->query("
             <div style="height: 4px; background: linear-gradient(90deg, #007aff, #004085);"></div>
         </div>
     </div>
-    <div class="col-md-4" data-aos="zoom-in" data-aos-delay="300">
+    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="250">
+        <div class="card card-bajot border-0 shadow-premium overflow-hidden h-100">
+            <div class="card-body p-4 position-relative">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="bg-danger-subtle p-3 rounded-3">
+                        <i class="fa fa-receipt text-danger fa-lg"></i>
+                    </div>
+                </div>
+                <h6 class="text-secondary-themed extra-small text-uppercase mb-1">Operational Expenses</h6>
+                <h2 class="fw-bold mb-0 <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo format_currency($total_expenses); ?></h2>
+                <div class="mt-3 text-danger extra-small fw-bold">
+                    <i class="fa fa-minus-circle me-1"></i> Dept Wise
+                </div>
+            </div>
+            <div style="height: 4px; background: linear-gradient(90deg, #ff3b30, #af1d1d);"></div>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="300">
         <div class="card card-bajot border-0 shadow-premium overflow-hidden h-100 theme-gold-bg">
             <div class="card-body p-4 position-relative">
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -232,6 +261,80 @@ $recent_activities = $conn->query("
                         </a>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4" data-aos="fade-up" data-aos-delay="600">
+    <div class="col-lg-6">
+        <div class="card card-bajot border-0 shadow-premium h-100">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-theme"><i class="fa fa-calculator me-2"></i>Expense Report (Category-wise)</h5>
+                <a href="expense_dashboard.php" class="btn btn-sm btn-outline-gold">Full Analytics <i class="fa fa-arrow-right ms-1"></i></a>
+            </div>
+            <div class="card-body p-4">
+                <?php if (empty($expense_categories_data)): ?>
+                    <p class="text-muted mb-0 small">No expenses recorded for this department.</p>
+                <?php else: ?>
+                    <div class="row">
+                        <?php 
+                        $half = ceil(count($expense_categories_data) / 2);
+                        $chunks = array_chunk($expense_categories_data, $half > 0 ? $half : 1);
+                        foreach($chunks as $chunk): 
+                        ?>
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush bg-transparent">
+                                <?php foreach($chunk as $exp): ?>
+                                <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center border-secondary py-2 px-0 mb-1" style="border-bottom-style: dashed !important;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fa fa-caret-right text-gold me-2 extra-small"></i>
+                                        <span class="small <?php echo ($theme === 'dark' ? 'text-white-50' : 'text-secondary'); ?>"><?php echo htmlspecialchars($exp['name']); ?></span>
+                                    </div>
+                                    <span class="fw-bold small <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo format_currency($exp['total']); ?></span>
+                                </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="mt-4 pt-3 border-top border-secondary d-flex justify-content-between align-items-center">
+                        <span class="text-secondary-themed small fw-bold">TOTAL OPERATIONAL EXPENSE</span>
+                        <span class="h5 fw-bold text-danger mb-0"><?php echo format_currency($total_expenses); ?></span>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card card-bajot border-0 shadow-premium h-100">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="fw-bold mb-0 text-theme"><i class="fa fa-bullseye me-2"></i>Expense Budget Insight</h5>
+            </div>
+            <div class="card-body p-4">
+                <?php if (!empty($expense_categories_data)): ?>
+                    <?php 
+                    $limit = 5;
+                    $count = 0;
+                    foreach($expense_categories_data as $exp): 
+                        if ($count++ >= $limit) break;
+                        $percent = ($exp['total'] / ($total_expenses ?: 1)) * 100;
+                        $color = ($percent > 40) ? 'bg-danger' : (($percent > 20) ? 'bg-warning' : 'bg-success');
+                    ?>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="extra-small text-secondary-themed"><?php echo htmlspecialchars($exp['name']); ?></span>
+                            <span class="extra-small fw-bold text-gold"><?php echo number_format($percent, 1); ?>%</span>
+                        </div>
+                        <div class="progress bg-dark-card border border-secondary" style="height: 6px;">
+                            <div class="progress-bar <?php echo $color; ?> rounded-pill" role="progressbar" style="width: <?php echo $percent; ?>%"></div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <p class="text-muted small">Add some expenses to see insights.</p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
