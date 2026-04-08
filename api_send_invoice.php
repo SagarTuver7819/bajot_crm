@@ -35,7 +35,7 @@ if ($message === '') {
 $test_mode = !empty($_POST['test_mode']);
 if ($test_mode) {
     // Use a public sample PDF for local testing (no localhost fetch issue)
-    $file_url = 'https://www.africau.edu/images/default/sample.pdf';
+    $file_url = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
 } else {
     if (!isset($_FILES['pdf']) || $_FILES['pdf']['error'] !== UPLOAD_ERR_OK) {
         http_response_code(400);

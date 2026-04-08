@@ -50,7 +50,7 @@ if (!function_exists('oceanhub_send_message')) {
 
         $ch = curl_init(OCEANHUB_API_URL);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($payload));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $response = curl_exec($ch);
         $err = curl_error($ch);
