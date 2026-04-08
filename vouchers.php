@@ -103,7 +103,7 @@ if (isset($_GET['delete'])) {
                                     $wa_phone = preg_replace('/[^0-9]/', '', $row['mobile']);
                                     if (strlen($wa_phone) == 10) $wa_phone = "91" . $wa_phone;
                                 ?>
-                                    <a href="https://wa.me/<?php echo $wa_phone; ?>?text=<?php echo urlencode("Hello " . ($row['party_name'] ?: 'Customer') . ",\n\n" . ucfirst($row['type']) . " Voucher details for amount ₹" . number_format($row['amount'], 2) . ".\nDate: " . date('d-m-Y', strtotime($row['date'])) . "\n\nView here: " . $base_url . "print_invoice.php?type=voucher&id=" . $row['id']); ?>" class="p-2 text-success" title="Share on WhatsApp" target="_blank">
+                                    <a href="print_invoice.php?type=voucher&id=<?php echo $row['id']; ?>&autoshare=1" class="p-2 text-success" title="Send PDF on WhatsApp" target="_blank">
                                         <i class="fa-brands fa-whatsapp fs-4"></i>
                                     </a>
                                 <?php else: ?>
