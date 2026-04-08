@@ -47,10 +47,11 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Print | Kaizer CRM</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 0; padding: 20px; }
-        .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; box-shadow: 0 0 10px rgba(0, 0, 0, 0.15); font-size: 14px; line-height: 24px; color: #555; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 0; padding: 20px; background-color: #f8f9fa; }
+        .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; background: #fff; box-shadow: 0 0 10px rgba(0, 0, 0, 0.15); font-size: 14px; line-height: 24px; color: #555; }
         .header { display: flex; justify-content: space-between; border-bottom: 2px solid #C9A14A; padding-bottom: 20px; margin-bottom: 20px; }
         .header h1 { color: #C9A14A; margin: 0; font-size: 28px; }
         .details { display: flex; justify-content: space-between; margin-bottom: 20px; }
@@ -63,21 +64,83 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
         .total-box td { border-bottom: none; padding: 5px 10px; }
         .grand-total { font-weight: bold; color: #C9A14A; font-size: 18px; border-top: 2px solid #C9A14A; }
         .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; }
+        
         @media print {
-            .btn-print { display: none; }
-            .invoice-box { box-shadow: none; border: none; }
+            body { padding: 0; background: none; }
+            .no-print { display: none !important; }
+            .invoice-box { box-shadow: none; border: none; max-width: 100%; margin: 0; padding: 0; }
         }
+
+        .btn-toolbar {
+            margin: 0 auto 30px auto;
+            max-width: 800px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            position: sticky;
+            top: 20px;
+            z-index: 1000;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        }
+        .btn-toolbar button, .btn-toolbar a {
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn-toolbar button:hover, .btn-toolbar a:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            filter: brightness(1.1);
+        }
+        .btn-toolbar button:active {
+            transform: translateY(0);
+        }
+        .btn-download { background-color: #007bff; }
+        .btn-print { background-color: #C9A14A; }
+        .btn-whatsapp { background-color: #075E54; }
+        
+        .sending-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div class="btn-print" style="float: right; display: flex; gap: 10px; margin: 20px;">
-        <button onclick="downloadPDF()" style="background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold;">DOWNLOAD PDF</button>
-        <button onclick="window.print()" style="background: #C9A14A; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold;">PRINT NOW</button>
-        <?php if (!empty($wa_phone)): ?>
-            <?php if ($oceanhub_ready): ?>
-            <a href="javascript:void(0)" id="btn-send-pdf" onclick="sendPdfToWhatsApp(this)" style="background: #075E54; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold; text-decoration: none;">SEND PDF</a>
-            <?php endif; ?>
-            <a href="https://wa.me/<?php echo $wa_phone; ?>?text=<?php echo $wa_msg; ?>" target="_blank" style="background: #25D366; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold; text-decoration: none;">SHARE LINK</a>
+    <div class="btn-toolbar no-print">
+        <button onclick="downloadPDF()" class="btn-download">
+            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            DOWNLOAD PDF
+        </button>
+        <button onclick="window.print()" class="btn-print">
+            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            PRINT NOW
+        </button>
+        <?php if (!empty($wa_phone) && $oceanhub_ready): ?>
+            <button id="btn-send-pdf" onclick="sendPdfToWhatsApp(this)" class="btn-whatsapp">
+                <svg id="wa-icon" style="width: 18px; height: 18px;" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .018 5.393 0 12.03c0 2.122.554 4.197 1.604 6.04L0 24l6.101-1.6c1.785.973 3.799 1.488 5.845 1.489h.005c6.634 0 12.03-5.394 12.033-12.033a11.812 11.812 0 00-3.46-8.508z"/></svg>
+                <div id="wa-spinner" class="sending-spinner" style="display: none;"></div>
+                SEND ON WHATSAPP
+            </button>
         <?php endif; ?>
     </div>
     
@@ -196,7 +259,7 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
                 margin:       10,
                 filename:     fileName,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
+                html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             return html2pdf().set(opt).from(element).save();
@@ -208,12 +271,11 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
                 margin:       10,
                 filename:     fileName,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
+                html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
-            const worker = html2pdf().set(opt).from(element);
-            const pdf = await worker.get('pdf');
-            return pdf.output('blob');
+            // Use outputPdf() directly which is more stable in 0.10.1
+            return html2pdf().set(opt).from(element).outputPdf('blob');
         }
 
         async function sendPdfToWhatsApp(btn, forceTest = false) {
@@ -226,11 +288,14 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
                 return;
             }
 
-            const originalText = btn ? btn.innerText : '';
+            const icon = document.getElementById('wa-icon');
+            const spinner = document.getElementById('wa-spinner');
+            
             if (btn) {
-                btn.innerText = 'SENDING...';
                 btn.style.opacity = '0.7';
                 btn.style.pointerEvents = 'none';
+                if (icon) icon.style.display = 'none';
+                if (spinner) spinner.style.display = 'block';
             }
 
             try {
@@ -272,9 +337,10 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
                 alert('Failed to send PDF: ' + (err.message || 'Please try again.'));
             } finally {
                 if (btn) {
-                    btn.innerText = originalText;
                     btn.style.opacity = '1';
                     btn.style.pointerEvents = 'auto';
+                    if (icon) icon.style.display = 'block';
+                    if (spinner) spinner.style.display = 'none';
                 }
             }
         }

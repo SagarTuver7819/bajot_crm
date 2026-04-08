@@ -58,6 +58,14 @@ if ($test_mode) {
     }
 
     $file_url = get_base_url() . $file_path;
+
+    // LOCALHOST FIX: OceanHub server cannot access 'localhost' URLs.
+    // If we are on localhost, we must use a public PDF URL for testing.
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
+        // We still save the actual PDF locally (above), but send a public one to API
+        $file_url = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+    }
 }
 
 $sandbox_override = $test_mode ? 'true' : null;
