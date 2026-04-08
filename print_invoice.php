@@ -258,8 +258,13 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
                 let data = {};
                 try { data = JSON.parse(raw); } catch (e) { data = { raw }; }
                 if (!res.ok || !data.ok) {
-                    const apiMsg = data.error || data.response || data.raw || 'Failed to send PDF';
-                    throw new Error(apiMsg);
+                    const parts = [];
+                    const baseMsg = data.error || data.response || data.raw || 'Failed to send PDF';
+                    parts.push(baseMsg);
+                    if (data.http_code) parts.push('HTTP ' + data.http_code);
+                    if (data.response && data.response !== baseMsg) parts.push('Resp: ' + data.response);
+                    if (data.curl_error) parts.push('cURL: ' + data.curl_error);
+                    throw new Error(parts.join(' | '));
                 }
 
                 alert('PDF sent successfully on WhatsApp.');
