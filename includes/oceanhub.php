@@ -9,7 +9,7 @@ if (!defined('OCEANHUB_APPKEY')) {
     define('OCEANHUB_APPKEY', '44a742d7-69e0-448f-b399-82c0c35faea1');
 }
 if (!defined('OCEANHUB_AUTHKEY')) {
-    define('OCEANHUB_AUTHKEY', 'HAWQkc4MSIZMh1uYRKYURmgJncNzhcAjSpqcI9ajnGIPX3rTED');
+    define('OCEANHUB_AUTHKEY', 'oituCXmBGqh1tnEG1IMfjWw7rpGKdeXDBvUX6QcgA3EzO79ywn');
 }
 if (!defined('OCEANHUB_SANDBOX')) {
     // Set to 'true' only if OceanHub requires sandbox mode
