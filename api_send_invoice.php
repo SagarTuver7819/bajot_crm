@@ -5,6 +5,16 @@ check_login();
 
 header('Content-Type: application/json; charset=utf-8');
 
+// TEMP DEBUG: verify which credentials are loaded on live
+if (isset($_GET['debug_keys'])) {
+    echo json_encode([
+        'appkey' => OCEANHUB_APPKEY,
+        'authkey' => substr(OCEANHUB_AUTHKEY, 0, 6) . '...',
+        'sandbox' => OCEANHUB_SANDBOX
+    ]);
+    exit();
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['ok' => false, 'error' => 'Method not allowed']);
