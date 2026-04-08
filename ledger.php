@@ -59,6 +59,22 @@ if ($party_id) {
         <h4 class="mb-0 text-theme">Party Ledger Report</h4>
         <div class="d-flex gap-2">
             <button onclick="window.print()" class="btn btn-outline-gold btn-sm"><i class="fa fa-print me-1"></i> Print Ledger</button>
+            <?php if ($party_id): 
+                // Base URL for link sharing
+                $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+                $host = $_SERVER['HTTP_HOST'];
+                $path = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+                $base_url = $protocol . "://" . $host . $path . "/";
+                
+                // Get mobile for sharing
+                $pm = $conn->query("SELECT mobile, name FROM parties WHERE id=$party_id")->fetch_assoc();
+                if ($pm['mobile']):
+                    $wa_msg = urlencode("Hello " . $pm['name'] . ",\n\nYour ledger statement is ready.\nPeriod: " . date('d-m-Y', strtotime($from_date)) . " to " . date('d-m-Y', strtotime($to_date)) . "\n\nView here: " . $base_url . "ledger.php?party_id=" . $party_id . "&from_date=" . $from_date . "&to_date=" . $to_date);
+            ?>
+                <a href="https://wa.me/91<?php echo preg_replace('/[^0-9]/', '', $pm['mobile']); ?>?text=<?php echo $wa_msg; ?>" target="_blank" class="btn btn-outline-success btn-sm no-print">
+                    <i class="fa-brands fa-whatsapp me-1"></i> Share via WhatsApp
+                </a>
+            <?php endif; endif; ?>
         </div>
     </div>
 </div>

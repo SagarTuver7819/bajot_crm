@@ -118,13 +118,20 @@ if (isset($_GET['delete'])) {
                             <th>Supplier</th>
                             <th>Items</th>
                             <th>Total (₹)</th>
+                            <th class="text-center">Share</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php 
                         $dept_id = (int)$_SESSION['dept_id'];
-                        $res = $conn->query("SELECT i.*, p.name as supplier_name FROM inwards i JOIN parties p ON i.party_id = p.id WHERE i.dept_id = $dept_id ORDER BY i.id DESC");
+                        $res = $conn->query("SELECT i.*, p.name as supplier_name, p.mobile FROM inwards i JOIN parties p ON i.party_id = p.id WHERE i.dept_id = $dept_id ORDER BY i.id DESC");
+                        
+                        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+                        $host = $_SERVER['HTTP_HOST'];
+                        $path = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+                        $base_url = $protocol . "://" . $host . $path . "/";
+
                         while ($row = $res->fetch_assoc()):
                             $item_count = $conn->query("SELECT COUNT(*) FROM inward_items WHERE inward_id=".$row['id'])->fetch_row()[0];
                         ?>
@@ -134,6 +141,15 @@ if (isset($_GET['delete'])) {
                             <td><?php echo $row['supplier_name']; ?></td>
                             <td><span class="badge bg-secondary"><?php echo $item_count; ?> Items</span></td>
                             <td class="fw-bold"><?php echo format_currency($row['total_amount']); ?></td>
+                            <td class="text-center">
+                                <?php if ($row['mobile']): ?>
+                                    <a href="https://wa.me/91<?php echo preg_replace('/[^0-9]/', '', $row['mobile']); ?>?text=<?php echo urlencode("Hello " . $row['supplier_name'] . ",\n\nPurchase Voucher #" . $row['bill_no'] . " details.\nTotal Amount: ₹" . number_format($row['total_amount'], 2) . "\n\nView here: " . $base_url . "print_invoice.php?type=purchase&id=" . $row['id']); ?>" class="p-2 text-success" title="Share on WhatsApp" target="_blank">
+                                        <i class="fa-brands fa-whatsapp fs-4"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted small">No Mobile</span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     <a href="print_invoice.php?type=purchase&id=<?php echo $row['id']; ?>" class="btn btn-outline-warning" title="Print" target="_blank">

@@ -149,13 +149,21 @@ if (isset($_GET['delete'])) {
                             <th>Customer</th>
                             <th>Items</th>
                             <th>Total (₹)</th>
+                            <th class="text-center">Share</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php 
                         $dept_id = (int)$_SESSION['dept_id'];
-                        $res = $conn->query("SELECT o.*, p.name as customer_name FROM outwards o JOIN parties p ON o.party_id = p.id WHERE o.dept_id = $dept_id ORDER BY o.id DESC");
+                        $res = $conn->query("SELECT o.*, p.name as customer_name, p.mobile FROM outwards o JOIN parties p ON o.party_id = p.id WHERE o.dept_id = $dept_id ORDER BY o.id DESC");
+                        
+                        // Base URL for link sharing
+                        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+                        $host = $_SERVER['HTTP_HOST'];
+                        $path = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+                        $base_url = $protocol . "://" . $host . $path . "/";
+                        
                         while ($row = $res->fetch_assoc()):
                             $item_count = $conn->query("SELECT COUNT(*) FROM outward_items WHERE outward_id=".$row['id'])->fetch_row()[0];
                         ?>
@@ -165,6 +173,18 @@ if (isset($_GET['delete'])) {
                             <td><?php echo $row['customer_name']; ?></td>
                             <td><span class="badge bg-secondary"><?php echo $item_count; ?> Items</span></td>
                             <td class="fw-bold"><?php echo format_currency($row['total_amount']); ?></td>
+                            <td class="text-center">
+                                <?php if ($row['mobile']): 
+                                    $wa_mobile = preg_replace('/[^0-9]/', '', $row['mobile']);
+                                    if (strlen($wa_mobile) == 10) $wa_mobile = "91" . $wa_mobile;
+                                ?>
+                                    <a href="print_invoice.php?type=sales&id=<?php echo $row['id']; ?>&autoshare=1" class="p-2 text-success" title="Send PDF on WhatsApp" target="_blank">
+                                        <i class="fa-brands fa-whatsapp fs-4"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted small">No Mobile</span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     <a href="print_invoice.php?type=sales&id=<?php echo $row['id']; ?>" class="btn btn-outline-warning" title="Print Invoice" target="_blank">
@@ -198,7 +218,7 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
 
     if (($mode === 'edit' || $mode === 'view') && isset($_GET['id'])) {
         $id = (int)$_GET['id'];
-        $outward = $conn->query("SELECT * FROM outwards WHERE id=$id")->fetch_assoc();
+        $outward = $conn->query("SELECT o.*, p.name as customer_name, p.mobile as customer_mobile FROM outwards o JOIN parties p ON o.party_id = p.id WHERE o.id=$id")->fetch_assoc();
         
         $items_res = $conn->query("SELECT * FROM outward_items WHERE outward_id=$id");
         while($item = $items_res->fetch_assoc()) {
@@ -374,7 +394,18 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                         <?php if ($mode !== 'view'): ?>
                             <button type="submit" name="save_outward" class="btn btn-gold px-5"><?php echo ($mode === 'edit') ? 'UPDATE' : 'SAVE'; ?> SALES ENTRY <i class="fa fa-check ms-1"></i></button>
                         <?php else: ?>
-                            <a href="print_invoice.php?type=sales&id=<?php echo $outward['id']; ?>" class="btn btn-outline-warning px-5" target="_blank">PRINT INVOICE <i class="fa fa-print ms-1"></i></a>
+                            <a href="print_invoice.php?type=sales&id=<?php echo $outward['id']; ?>" class="btn btn-outline-warning px-4" target="_blank">PRINT INVOICE <i class="fa fa-print ms-1"></i></a>
+                            <?php if (!empty($outward['customer_mobile'])): 
+                                $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+                                $host = $_SERVER['HTTP_HOST'];
+                                $path = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+                                $base_url = $protocol . "://" . $host . $path . "/";
+                                $wa_msg = urlencode("Hello " . $outward['customer_name'] . ",\n\nYour Sales Bill #" . $outward['bill_no'] . " is ready.\nTotal Amount: ₹" . number_format($outward['total_amount'], 2) . "\n\nYou can view/download your invoice here: " . $base_url . "print_invoice.php?type=sales&id=" . $outward['id']);
+                                $wa_phone = preg_replace('/[^0-9]/', '', $outward['customer_mobile']);
+                                if (strlen($wa_phone) == 10) $wa_phone = "91" . $wa_phone;
+                            ?>
+                            <a href="print_invoice.php?type=sales&id=<?php echo $outward['id']; ?>&autoshare=1" class="btn btn-outline-success px-4" target="_blank">SEND PDF <i class="fa-brands fa-whatsapp ms-1"></i></a>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                 </div>

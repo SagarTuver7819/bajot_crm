@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
 </div>
 
 <div class="row g-4 mb-4">
-    <div class="col-md-3">
+    <div class="col">
         <div class="card card-bajot p-3">
             <h6 class="text-muted small">Total Items</h6>
             <h4 class="fw-bold"><?php 
@@ -38,13 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
             ?></h4>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col">
         <div class="card card-bajot p-3 border-danger">
             <h6 class="text-muted small">Low Stock Alert</h6>
             <h4 class="fw-bold text-danger"><?php echo $conn->query("SELECT COUNT(*) FROM products WHERE dept_id = $dept_id AND current_stock < 10")->fetch_row()[0]; ?></h4>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col">
         <div class="card card-bajot p-3 border-theme">
             <h6 class="text-muted small">Total Current Pcs</h6>
             <h4 class="fw-bold text-theme"><?php 
@@ -53,7 +53,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
             ?></h4>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col">
+        <div class="card card-bajot p-3 border-theme">
+            <h6 class="text-muted small">Total Current Kgs</h6>
+            <h4 class="fw-bold text-theme"><?php 
+                $total_kgs_sum = $conn->query("SELECT SUM(total_kgs) FROM products WHERE dept_id = $dept_id")->fetch_row()[0];
+                echo number_format($total_kgs_sum ?? 0, 2); 
+            ?></h4>
+        </div>
+    </div>
+    <div class="col">
         <div class="card card-bajot p-3 border-theme theme-gold-bg">
             <h6 class="text-muted small">Total Stock Value</h6>
             <h4 class="fw-bold text-theme"><?php 
@@ -79,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
                         <th>Rate (₹)</th>
                         <th>Stock Value (₹)</th>
                         <th>Status</th>
+                        <th class="text-center">Share</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -105,6 +115,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
                         ?>
                         <td class="fw-bold text-gold"><?php echo format_currency($row_val); ?></td>
                         <td><?php echo $status; ?></td>
+                        <td class="text-center">
+                            <?php 
+                                $wa_text = urlencode("Product: " . $row['name'] . "\nStock: " . $row['total_pcs'] . " Pcs / " . $row['total_kgs'] . " Kgs\nRate: " . format_currency($row['rate']));
+                            ?>
+                            <a href="https://wa.me/?text=<?php echo $wa_text; ?>" target="_blank" class="text-success p-2">
+                                <i class="fa-brands fa-whatsapp fs-5"></i>
+                            </a>
+                        </td>
                     </tr>
                     <?php 
                         $footer_total_value += $row_val;
@@ -117,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
                         <td class="text-theme"><?php echo number_format($footer_total_kgs, 2); ?></td>
                         <td></td>
                         <td class="text-gold"><?php echo format_currency($footer_total_value); ?></td>
-                        <td></td>
+                        <td colspan="2"></td>
                     </tr>
                 </tfoot>
             </table>
