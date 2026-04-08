@@ -75,8 +75,7 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
         <button onclick="window.print()" style="background: #C9A14A; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold;">PRINT NOW</button>
         <?php if (!empty($wa_phone)): ?>
             <?php if ($oceanhub_ready): ?>
-                <a href="javascript:void(0)" id="btn-send-pdf" onclick="sendPdfToWhatsApp(this)" style="background: #075E54; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold; text-decoration: none;">SEND PDF</a>
-                <a href="javascript:void(0)" id="btn-test-send" onclick="sendPdfToWhatsApp(this, true)" style="background: #6c757d; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold; text-decoration: none;">TEST SEND</a>
+            <a href="javascript:void(0)" id="btn-send-pdf" onclick="sendPdfToWhatsApp(this)" style="background: #075E54; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold; text-decoration: none;">SEND PDF</a>
             <?php endif; ?>
             <a href="https://wa.me/<?php echo $wa_phone; ?>?text=<?php echo $wa_msg; ?>" target="_blank" style="background: #25D366; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold; text-decoration: none;">SHARE LINK</a>
         <?php endif; ?>

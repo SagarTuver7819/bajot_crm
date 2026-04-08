@@ -143,7 +143,7 @@ if (isset($_GET['delete'])) {
                             <td class="fw-bold"><?php echo format_currency($row['total_amount']); ?></td>
                             <td class="text-center">
                                 <?php if ($row['mobile']): ?>
-                                    <a href="https://wa.me/91<?php echo preg_replace('/[^0-9]/', '', $row['mobile']); ?>?text=<?php echo urlencode("Hello " . $row['supplier_name'] . ",\n\nPurchase Voucher #" . $row['bill_no'] . " details.\nTotal Amount: ₹" . number_format($row['total_amount'], 2) . "\n\nView here: " . $base_url . "print_invoice.php?type=purchase&id=" . $row['id']); ?>" class="p-2 text-success" title="Share on WhatsApp" target="_blank">
+                                    <a href="print_invoice.php?type=purchase&id=<?php echo $row['id']; ?>&autoshare=1" class="p-2 text-success" title="Send PDF on WhatsApp" target="_blank">
                                         <i class="fa-brands fa-whatsapp fs-4"></i>
                                     </a>
                                 <?php else: ?>
