@@ -72,13 +72,20 @@ if (isset($_GET['delete'])) {
                             <th>Party / Payee</th>
                             <th>Amount (₹)</th>
                             <th>Description</th>
+                            <th class="text-center">Share</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php 
                         $dept_id = (int)$_SESSION['dept_id'];
-                        $res = $conn->query("SELECT v.*, p.name as party_name FROM vouchers v LEFT JOIN parties p ON v.party_id = p.id WHERE v.dept_id = $dept_id ORDER BY v.date DESC");
+                        $res = $conn->query("SELECT v.*, p.name as party_name, p.mobile FROM vouchers v LEFT JOIN parties p ON v.party_id = p.id WHERE v.dept_id = $dept_id ORDER BY v.date DESC");
+                        
+                        $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+                        $host = $_SERVER['HTTP_HOST'];
+                        $path = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+                        $base_url = $protocol . "://" . $host . $path . "/";
+
                         while ($row = $res->fetch_assoc()):
                             $color = ($theme === 'dark' ? 'text-white' : 'text-dark');
                             if($row['type'] == 'receipt') $color = 'text-success';
@@ -91,6 +98,18 @@ if (isset($_GET['delete'])) {
                             <td><?php echo $row['party_name'] ?: 'General / Self'; ?></td>
                             <td class="fw-bold <?php echo $color; ?>"><?php echo format_currency($row['amount']); ?></td>
                             <td class="small"><?php echo $row['description']; ?></td>
+                            <td class="text-center">
+                                <?php if ($row['mobile']): 
+                                    $wa_phone = preg_replace('/[^0-9]/', '', $row['mobile']);
+                                    if (strlen($wa_phone) == 10) $wa_phone = "91" . $wa_phone;
+                                ?>
+                                    <a href="https://wa.me/<?php echo $wa_phone; ?>?text=<?php echo urlencode("Hello " . ($row['party_name'] ?: 'Customer') . ",\n\n" . ucfirst($row['type']) . " Voucher details for amount ₹" . number_format($row['amount'], 2) . ".\nDate: " . date('d-m-Y', strtotime($row['date'])) . "\n\nView here: " . $base_url . "print_invoice.php?type=voucher&id=" . $row['id']); ?>" class="p-2 text-success" title="Share on WhatsApp" target="_blank">
+                                        <i class="fa-brands fa-whatsapp fs-4"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted small">-</span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
                                     <a href="print_invoice.php?type=voucher&id=<?php echo $row['id']; ?>" class="btn btn-outline-warning" target="_blank"><i class="fa fa-print"></i></a>
