@@ -13,7 +13,7 @@ if (!defined('OCEANHUB_AUTHKEY')) {
 }
 if (!defined('OCEANHUB_SANDBOX')) {
     // Set to 'true' only if OceanHub requires sandbox mode
-    define('OCEANHUB_SANDBOX', 'false');
+    define('OCEANHUB_SANDBOX', 'true');
 }
 
 if (!function_exists('oceanhub_ready')) {
