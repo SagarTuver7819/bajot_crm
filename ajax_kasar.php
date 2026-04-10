@@ -24,16 +24,15 @@ if ($action === 'add_kasar') {
 
     // Automatically determine type if not provided
     if (empty($type)) {
-        $dept_id = (int)$_SESSION['dept_id'];
-        // Calculate current balance for this department
+        // Calculate current balance (global to match ledger)
         $sql_bal = "SELECT 
             (SELECT COALESCE(opening_balance, 0) FROM parties WHERE id = $party_id) +
-            (SELECT COALESCE(SUM(total_amount), 0) FROM outwards WHERE party_id = $party_id AND dept_id = $dept_id) +
-            (SELECT COALESCE(SUM(amount), 0) FROM vouchers WHERE party_id = $party_id AND type IN ('payment', 'expense') AND dept_id = $dept_id) +
-            (SELECT COALESCE(SUM(amount), 0) FROM kasars WHERE party_id = $party_id AND type = 'received' AND dept_id = $dept_id) -
-            (SELECT COALESCE(SUM(total_amount), 0) FROM inwards WHERE party_id = $party_id AND dept_id = $dept_id) -
-            (SELECT COALESCE(SUM(amount), 0) FROM vouchers WHERE party_id = $party_id AND type = 'receipt' AND dept_id = $dept_id) -
-            (SELECT COALESCE(SUM(amount), 0) FROM kasars WHERE party_id = $party_id AND type = 'allowed' AND dept_id = $dept_id) 
+            (SELECT COALESCE(SUM(total_amount), 0) FROM outwards WHERE party_id = $party_id) +
+            (SELECT COALESCE(SUM(amount), 0) FROM vouchers WHERE party_id = $party_id AND type IN ('payment', 'expense')) +
+            (SELECT COALESCE(SUM(amount), 0) FROM kasars WHERE party_id = $party_id AND type = 'received') -
+            (SELECT COALESCE(SUM(total_amount), 0) FROM inwards WHERE party_id = $party_id) -
+            (SELECT COALESCE(SUM(amount), 0) FROM vouchers WHERE party_id = $party_id AND type = 'receipt') -
+            (SELECT COALESCE(SUM(amount), 0) FROM kasars WHERE party_id = $party_id AND type = 'allowed') 
             as balance";
         $res_bal = $conn->query($sql_bal);
         $row_bal = $res_bal->fetch_assoc();
@@ -65,16 +64,15 @@ if ($action === 'delete_kasar') {
 
 if ($action === 'get_balance') {
     $party_id = (int)$_POST['party_id'];
-    $dept_id = (int)$_SESSION['dept_id'];
     
     $sql_bal = "SELECT 
         (SELECT COALESCE(opening_balance, 0) FROM parties WHERE id = $party_id) +
-        (SELECT COALESCE(SUM(total_amount), 0) FROM outwards WHERE party_id = $party_id AND dept_id = $dept_id) +
-        (SELECT COALESCE(SUM(amount), 0) FROM vouchers WHERE party_id = $party_id AND type IN ('payment', 'expense') AND dept_id = $dept_id) +
-        (SELECT COALESCE(SUM(amount), 0) FROM kasars WHERE party_id = $party_id AND type = 'received' AND dept_id = $dept_id) -
-        (SELECT COALESCE(SUM(total_amount), 0) FROM inwards WHERE party_id = $party_id AND dept_id = $dept_id) -
-        (SELECT COALESCE(SUM(amount), 0) FROM vouchers WHERE party_id = $party_id AND type = 'receipt' AND dept_id = $dept_id) -
-        (SELECT COALESCE(SUM(amount), 0) FROM kasars WHERE party_id = $party_id AND type = 'allowed' AND dept_id = $dept_id) 
+        (SELECT COALESCE(SUM(total_amount), 0) FROM outwards WHERE party_id = $party_id) +
+        (SELECT COALESCE(SUM(amount), 0) FROM vouchers WHERE party_id = $party_id AND type IN ('payment', 'expense')) +
+        (SELECT COALESCE(SUM(amount), 0) FROM kasars WHERE party_id = $party_id AND type = 'received') -
+        (SELECT COALESCE(SUM(total_amount), 0) FROM inwards WHERE party_id = $party_id) -
+        (SELECT COALESCE(SUM(amount), 0) FROM vouchers WHERE party_id = $party_id AND type = 'receipt') -
+        (SELECT COALESCE(SUM(amount), 0) FROM kasars WHERE party_id = $party_id AND type = 'allowed') 
         as balance";
     $res_bal = $conn->query($sql_bal);
     $row_bal = $res_bal->fetch_assoc();
