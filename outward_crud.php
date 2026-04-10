@@ -254,7 +254,7 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                             <select name="party_id" class="form-select border-secondary shadow-sm" required>
                                 <option value="">Select Customer</option>
                                 <?php 
-                                $custs = $conn->query("SELECT id, name FROM parties WHERE type='customer'");
+                                $custs = $conn->query("SELECT id, name FROM parties WHERE type IN ('customer', 'both')");
                                 while($c = $custs->fetch_assoc()) {
                                     $sel = ($outward && $outward['party_id'] == $c['id']) ? 'selected' : '';
                                     echo "<option value='{$c['id']}' $sel>{$c['name']}</option>";
@@ -266,6 +266,7 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                             </button>
                         </div>
                     </div>
+
                     <div class="col-md-4 mb-3">
                         <label class="form-label">Sales Date *</label>
                         <input type="date" name="date" class="form-control" value="<?php echo $outward ? $outward['date'] : date('Y-m-d'); ?>" required>

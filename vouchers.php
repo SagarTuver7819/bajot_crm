@@ -151,8 +151,8 @@ if (isset($_GET['delete'])) {
                         <select name="party_id" class="form-select border-secondary">
                             <option value="">Select Party</option>
                             <?php 
-                            $types = ($vtype == 'receipt') ? "'customer'" : "'supplier'";
-                            $ps = $conn->query("SELECT id, name FROM parties WHERE type=$types");
+                            $types = ($vtype == 'receipt') ? "'customer', 'both'" : "'supplier', 'both'";
+                            $ps = $conn->query("SELECT id, name FROM parties WHERE type IN ($types)");
                             while($p = $ps->fetch_assoc()) {
                                 $sel = ($voucher && $voucher['party_id'] == $p['id']) ? 'selected' : '';
                                 echo "<option value='{$p['id']}' $sel>{$p['name']}</option>";
