@@ -9,6 +9,25 @@ $dept_id = $_SESSION['dept_id'] ?? 0;
 $total_expenses = $conn->query("SELECT SUM(amount) FROM expenses WHERE dept_id = $dept_id")->fetch_row()[0] ?? 0;
 $profit = $total_sales - $total_purchase - $total_expenses;
 
+// Calculate Total Receivables (Levana) and Total Payables (Apvana)
+$outstandings = $conn->query("SELECT 
+    SUM(CASE WHEN balance > 0 THEN balance ELSE 0 END) as receivables,
+    SUM(CASE WHEN balance < 0 THEN ABS(balance) ELSE 0 END) as payables
+FROM (
+    SELECT p.id,
+        (COALESCE(p.opening_balance, 0) + 
+         COALESCE((SELECT SUM(total_amount) FROM outwards WHERE party_id = p.id), 0) + 
+         COALESCE((SELECT SUM(amount) FROM vouchers WHERE party_id = p.id AND type IN ('payment', 'expense')), 0) + 
+         COALESCE((SELECT SUM(amount) FROM kasars WHERE party_id = p.id AND type = 'received'), 0) - 
+         COALESCE((SELECT SUM(total_amount) FROM inwards WHERE party_id = p.id), 0) - 
+         COALESCE((SELECT SUM(amount) FROM vouchers WHERE party_id = p.id AND type = 'receipt'), 0) - 
+         COALESCE((SELECT SUM(amount) FROM kasars WHERE party_id = p.id AND type = 'allowed'), 0)) as balance
+    FROM parties p
+) as party_balances")->fetch_assoc();
+
+$total_receivables = $outstandings['receivables'] ?? 0;
+$total_payables = $outstandings['payables'] ?? 0;
+
 // Dept Breakdown
 $sales_by_dept = [];
 $res_s = $conn->query("SELECT dept_id, SUM(total_amount) as total FROM outwards GROUP BY dept_id");
@@ -122,6 +141,39 @@ while($row = $res_exp->fetch_assoc()) $expense_categories_data[] = $row;
                 </div>
             </div>
             <div style="height: 4px; background: var(--gold-gradient);"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6" data-aos="fade-right">
+        <div class="card card-bajot border-0 shadow-premium overflow-hidden">
+            <div class="card-body p-4 d-flex align-items-center">
+                <div class="bg-success-subtle p-3 rounded-circle me-4">
+                    <i class="fa fa-hand-holding-dollar text-success fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-success extra-small text-uppercase mb-1 fw-bold">TOTAL RECEIVABLES (Levana)</h6>
+                    <h1 class="fw-bold mb-0 <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo format_currency($total_receivables); ?></h1>
+                    <p class="text-secondary-themed small mb-0 mt-1"><i class="fa fa-arrow-up text-success me-1"></i> From All Customers</p>
+                </div>
+            </div>
+            <div style="height: 4px; background: #28a745;"></div>
+        </div>
+    </div>
+    <div class="col-md-6" data-aos="fade-left">
+        <div class="card card-bajot border-0 shadow-premium overflow-hidden">
+            <div class="card-body p-4 d-flex align-items-center">
+                <div class="bg-danger-subtle p-3 rounded-circle me-4">
+                    <i class="fa fa-money-bill-transfer text-danger fa-2x"></i>
+                </div>
+                <div>
+                    <h6 class="text-danger extra-small text-uppercase mb-1 fw-bold">TOTAL PAYABLES (Apvana)</h6>
+                    <h1 class="fw-bold mb-0 <?php echo ($theme === 'dark' ? 'text-white' : 'text-dark'); ?>"><?php echo format_currency($total_payables); ?></h1>
+                    <p class="text-secondary-themed small mb-0 mt-1"><i class="fa fa-arrow-down text-danger me-1"></i> To All Suppliers</p>
+                </div>
+            </div>
+            <div style="height: 4px; background: #dc3545;"></div>
         </div>
     </div>
 </div>
