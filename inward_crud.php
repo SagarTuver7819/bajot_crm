@@ -219,7 +219,7 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                             <select name="party_id" class="form-select border-secondary shadow-sm" required>
                                 <option value="">Select Supplier</option>
                                 <?php 
-                                $sups = $conn->query("SELECT id, name FROM parties WHERE type='supplier'");
+                                $sups = $conn->query("SELECT id, name FROM parties WHERE type IN ('supplier', 'both')");
                                 while($s = $sups->fetch_assoc()) {
                                     $sel = ($inward && $inward['party_id'] == $s['id']) ? 'selected' : '';
                                     echo "<option value='{$s['id']}' $sel>{$s['name']}</option>";

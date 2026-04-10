@@ -61,6 +61,10 @@
         <a href="ledger.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'ledger.php') ? 'active' : ''; ?>">
             <i class="fa fa-book"></i> <span>Party Ledger</span>
         </a>
+
+        <a href="kasar.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'kasar.php') ? 'active' : ''; ?>">
+            <i class="fa fa-adjust"></i> <span>Kasar / Adjustment</span>
+        </a>
         
         <a href="settings.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'settings.php') ? 'active' : ''; ?>">
             <i class="fa fa-cog"></i> <span>Settings</span>

@@ -108,7 +108,11 @@ if ($mode === 'edit' && isset($_GET['id'])) {
                         <tr>
                             <td class="fw-bold"><?php echo htmlspecialchars($row['name']); ?></td>
                             <td>
-                                <span class="badge <?php echo ($row['type'] == 'customer') ? 'bg-primary' : 'bg-info'; ?>">
+                                <span class="badge <?php 
+                                    if ($row['type'] == 'customer') echo 'bg-primary';
+                                    elseif ($row['type'] == 'supplier') echo 'bg-info';
+                                    else echo 'bg-warning text-dark';
+                                ?>">
                                     <?php echo ucfirst($row['type']); ?>
                                 </span>
                             </td>
@@ -156,6 +160,7 @@ if ($mode === 'edit' && isset($_GET['id'])) {
                         <select name="type" class="form-select border-secondary" required>
                             <option value="customer" <?php echo ($party && $party['type'] == 'customer') ? 'selected' : ''; ?>>Customer</option>
                             <option value="supplier" <?php echo ($party && $party['type'] == 'supplier') ? 'selected' : ''; ?>>Supplier</option>
+                            <option value="both" <?php echo ($party && $party['type'] == 'both') ? 'selected' : ''; ?>>Both (Cust & Supp)</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">

@@ -156,8 +156,19 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
                     <p><?php echo $s['company_address']; ?></p>
                 </div>
                 <div style="text-align: right;">
+                    <?php 
+                        $depts = [
+                            1 => 'Aluminium Section',
+                            2 => 'Powder Coating',
+                            3 => 'Anodizing Section'
+                        ];
+                        $dept_name = $depts[$data['dept_id']] ?? '';
+                    ?>
                     <h2 style="margin: 0;"><?php echo $title; ?></h2>
-                    <p><?php echo ($type == 'voucher' ? 'Voucher No:' : 'Bill No:'); ?> <b>#<?php echo $data['bill_no'] ?? $data['id']; ?></b><br>Date: <?php echo date('d-m-Y', strtotime($data['date'])); ?></p>
+                    <?php if ($dept_name): ?>
+                        <div style="color: #666; font-weight: bold; margin-bottom: 5px;"><?php echo strtoupper($dept_name); ?></div>
+                    <?php endif; ?>
+                    <p style="margin-top: 0;"><?php echo ($type == 'voucher' ? 'Voucher No:' : 'Bill No:'); ?> <b>#<?php echo $data['bill_no'] ?? $data['id']; ?></b><br>Date: <?php echo date('d-m-Y', strtotime($data['date'])); ?></p>
                 </div>
             </div>
 
@@ -188,7 +199,13 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php while($item = $items->fetch_assoc()): ?>
+                    <?php 
+                    $total_pcs = 0;
+                    $total_kgs = 0;
+                    while($item = $items->fetch_assoc()): 
+                        $total_pcs += $item['qty_pcs'];
+                        $total_kgs += $item['qty_kgs'];
+                    ?>
                     <tr>
                         <td><?php echo $item['prod_name']; ?></td>
                         <td style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?>"><?php echo $item['unit']; ?></td>
@@ -204,6 +221,16 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
+                <tfoot style="background: #fdfdfd; font-weight: bold; border-top: 2px solid #eee;">
+                    <tr>
+                        <td colspan="2">TOTAL</td>
+                        <?php if ($data['dept_id'] != 2): ?>
+                        <td><?php echo number_format($total_pcs, 2); ?></td>
+                        <?php endif; ?>
+                        <td><?php echo number_format($total_kgs, 2); ?><?php echo ($data['dept_id'] == 2) ? ' kg' : ''; ?></td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
             </table>
             <?php else: ?>
                 <div style="padding: 20px; border: 1px solid #eee; margin-top: 20px;">

@@ -18,6 +18,7 @@
               <select name="type" id="quick_party_type" class="form-select bg-dark text-white border-secondary" required>
                 <option value="customer">Customer</option>
                 <option value="supplier">Supplier</option>
+                <option value="both">Both (Cust & Supp)</option>
               </select>
             </div>
             <div class="col-md-6 mb-3">

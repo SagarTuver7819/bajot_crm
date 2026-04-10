@@ -17,8 +17,8 @@ if ($party_id) {
     // 1. Fetch Sales (Outwards)
     $sales = $conn->query("SELECT id, date, bill_no, total_amount as amount, 'Sales' as type, '' as description FROM outwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
     while($sale = $sales->fetch_assoc()) {
-        $sale['debit'] = ($party['type'] == 'customer') ? $sale['amount'] : 0;
-        $sale['credit'] = ($party['type'] == 'supplier') ? $sale['amount'] : 0;
+        $sale['debit'] = $sale['amount'];
+        $sale['credit'] = 0;
         $transactions[] = $sale;
     }
 
@@ -45,6 +45,23 @@ if ($party_id) {
             $v['credit'] = 0;
         }
         $transactions[] = $v;
+    }
+
+    // 4. Fetch Kasars
+    $dept_id = (int)$_SESSION['dept_id'];
+    $kasars = $conn->query("SELECT id, date, amount, type as ktype, description, 'Kasar' as type FROM kasars WHERE dept_id=$dept_id AND party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+    if ($kasars) {
+        while($k = $kasars->fetch_assoc()) {
+            $k['bill_no'] = "KSR-" . $k['id'];
+            if ($k['ktype'] == 'allowed') {
+                $k['debit'] = 0;
+                $k['credit'] = $k['amount'];
+            } else {
+                $k['debit'] = $k['amount'];
+                $k['credit'] = 0;
+            }
+            $transactions[] = $k;
+        }
     }
 
     // Sort by date
@@ -191,7 +208,14 @@ if ($party_id) {
                 <tfoot class="table-dark">
                     <tr>
                         <td colspan="5" class="text-end fw-bold">Closing Balance</td>
-                        <td class="text-end fw-bold"><?php echo format_currency($running_balance); ?></td>
+                        <td class="text-end fw-bold">
+                            <?php echo format_currency($running_balance); ?>
+                            <?php if (abs($running_balance) > 0): ?>
+                                <button type="button" class="btn btn-sm btn-info ms-2 no-print" onclick="openKasarModal(<?php echo $running_balance; ?>)">
+                                    <i class="fa fa-plus-circle me-1"></i> Add to Kasar
+                                </button>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 </tfoot>
             </table>
@@ -204,5 +228,70 @@ if ($party_id) {
         <p>Please select a party to view their transaction ledger.</p>
     </div>
 <?php endif; ?>
+
+<!-- Kasar Modal -->
+<div class="modal fade" id="kasarModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark-card border-secondary">
+            <div class="modal-header">
+                <h5 class="modal-title">Add to Kasar (Discount/Adjustment)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="kasarForm">
+                <div class="modal-body">
+                    <input type="hidden" name="party_id" value="<?php echo $party_id; ?>">
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <input type="number" step="0.01" name="amount" id="kasarAmount" class="form-control" required>
+                    </div>
+                    <input type="hidden" name="type" id="kasarType">
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="date" class="form-control" value="<?php echo date('Y-m-d'); ?>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description / Remarks</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="e.g. Rounding off balance"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-gold">Save Kasar Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openKasarModal(balance) {
+    const amount = Math.abs(balance);
+    const type = balance > 0 ? 'allowed' : 'received';
+    
+    document.getElementById('kasarAmount').value = amount;
+    document.getElementById('kasarType').value = type;
+    
+    new bootstrap.Modal(document.getElementById('kasarModal')).show();
+}
+
+document.getElementById('kasarForm').onsubmit = function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    formData.append('action', 'add_kasar');
+
+    fetch('ajax_kasar.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.success) {
+            location.reload();
+        } else {
+            alert(data.message || 'Error saving kasar');
+        }
+    });
+};
+</script>
 
 <?php require_once 'includes/footer.php'; ?>
