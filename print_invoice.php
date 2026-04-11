@@ -42,6 +42,53 @@ if (!empty($data['mobile'])) {
     $wa_msg = urlencode($wa_msg_raw);
 }
 $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
+
+// Helper functions for printing
+function indian_number_to_words($num) {
+    if ($num == 0) return "";
+    $dict = array(0=>'', 1=>'one', 2=>'two', 3=>'three', 4=>'four', 5=>'five', 6=>'six', 7=>'seven', 8=>'eight', 9=>'nine', 10=>'ten', 11=>'eleven', 12=>'twelve', 13=>'thirteen', 14=>'fourteen', 15=>'fifteen', 16=>'sixteen', 17=>'seventeen', 18=>'eighteen', 19=>'nineteen', 20=>'twenty', 30=>'thirty', 40=>'forty', 50=>'fifty', 60=>'sixty', 70=>'seventy', 80=>'eighty', 90=>'ninety');
+    
+    $n = (int)$num;
+    $res = "";
+    if ($n >= 10000000) {
+        $res .= indian_number_to_words((int)($n/10000000)) . " crore ";
+        $n %= 10000000;
+    }
+    if ($n >= 100000) {
+        $res .= indian_number_to_words((int)($n/100000)) . " lakh ";
+        $n %= 100000;
+    }
+    if ($n >= 1000) {
+        $res .= indian_number_to_words((int)($n/1000)) . " thousand ";
+        $n %= 1000;
+    }
+    if ($n > 0) {
+        if ($n < 21) $res .= $dict[$n];
+        else if ($n < 100) {
+            $tens = ((int)($n/10))*10;
+            $units = $n % 10;
+            $res .= $dict[$tens] . ($units ? '-' . $dict[$units] : '');
+        } else {
+            $res .= $dict[(int)($n/100)] . ' hundred ' . ($n%100 ? 'and ' . indian_number_to_words($n%100) : '');
+        }
+    }
+    return trim($res);
+}
+
+function convert_to_words($number) {
+    if ($number == 0) return 'Zero';
+    $number = number_format($number, 2, '.', '');
+    list($main, $paise) = explode('.', $number);
+    
+    $word_main = indian_number_to_words($main);
+    $word_paise = indian_number_to_words($paise);
+    
+    $out = $word_main;
+    if ($word_paise) {
+        $out .= " and " . $word_paise . " paisa";
+    }
+    return ucwords($out);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -62,8 +109,17 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
         .total-box { margin-top: 20px; text-align: right; }
         .total-box table { width: auto; margin-left: auto; }
         .total-box td { border-bottom: none; padding: 5px 10px; }
-        .grand-total { font-weight: bold; color: #C9A14A; font-size: 18px; border-top: 2px solid #C9A14A; }
+        .grand-total { font-weight: bold; color: #000; font-size: 18px; border-top: 2px solid #000; }
         .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .fw-bold { font-weight: bold; }
+        .border-bottom-dark { border-bottom: 2px solid #000; }
+        .mt-3 { margin-top: 15px; }
+        .mb-0 { margin-bottom: 0px; }
+        .d-flex { display: flex; }
+        .justify-content-between { justify-content: space-between; }
         
         @media print {
             body { padding: 0; background: none; }
@@ -146,124 +202,132 @@ $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
     
     <div id="invoice-content">
         <div class="invoice-box">
-            <div class="header">
-                <div>
-                    <?php if (!empty($s['company_logo']) && file_exists($s['company_logo'])): ?>
-                        <img src="<?php echo $s['company_logo']; ?>" alt="Logo" style="height: 100px; margin-bottom: 10px;">
-                    <?php else: ?>
-                        <h1><?php echo strtoupper($s['company_name']); ?></h1>
-                    <?php endif; ?>
-                    <p><?php echo $s['company_address']; ?></p>
-                </div>
-                <div style="text-align: right;">
-                    <?php 
-                        $depts = [
-                            1 => 'Aluminium Section',
-                            2 => 'Powder Coating',
-                            3 => 'Anodizing Section'
-                        ];
-                        $dept_name = $depts[$data['dept_id']] ?? '';
-                    ?>
-                    <h2 style="margin: 0;"><?php echo $title; ?></h2>
-                    <?php if ($dept_name): ?>
-                        <div style="color: #666; font-weight: bold; margin-bottom: 5px;"><?php echo strtoupper($dept_name); ?></div>
-                    <?php endif; ?>
-                    <p style="margin-top: 0;"><?php echo ($type == 'voucher' ? 'Voucher No:' : 'Bill No:'); ?> <b>#<?php echo $data['bill_no'] ?? $data['id']; ?></b><br>Date: <?php echo date('d-m-Y', strtotime($data['date'])); ?></p>
-                </div>
+            <!-- Miracle Style Layout -->
+            <div class="text-center mb-0">
+                <h1 style="color: #6b4e1a; margin-bottom: 0; letter-spacing: 2px;"><?php echo strtoupper($s['company_name']); ?></h1>
+                <h5 style="margin-top: 0; margin-bottom: 10px; text-decoration: underline;">ESTIMATE</h5>
             </div>
 
-            <div class="details">
-                <div>
-                    <strong>Billed To:</strong><br>
-                    <?php echo $data['name']; ?><br>
-                    <?php echo $data['address']; ?><br>
-                    Mobile: <?php echo $data['mobile']; ?>
+            <div class="d-flex justify-content-between">
+                <div class="fw-bold">DEBIT MEMO</div>
+                <div class="text-center">
+                    <h3 style="margin: 0; text-decoration: underline; font-weight: 800;"><?php echo $title; ?></h3>
+                </div>
+                <div class="fw-bold">ORIGINAL</div>
+            </div>
+
+            <div style="border: 2px solid #000; margin-top: 10px; padding: 10px;">
+                <div class="d-flex justify-content-between">
+                    <div style="width: 70%;">
+                        <strong>M/s.: <?php echo strtoupper($data['name']); ?></strong><br>
+                        <div style="margin-left: 35px;">
+                            <?php echo $data['address']; ?>
+                        </div>
+                    </div>
+                    <div style="width: 25%; border-left: 2px solid #000; padding-left: 10px;">
+                        <div>NO. : <b><?php echo $data['bill_no'] ?? $data['id']; ?></b></div>
+                        <div>DATE : <b><?php echo date('d/m/Y', strtotime($data['date'])); ?></b></div>
+                    </div>
                 </div>
             </div>
 
             <?php if ($items): ?>
             <table>
                 <thead>
-                    <tr>
                         <th>Item Description</th>
-                        <th style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?>">Unit</th>
-                        <?php if ($data['dept_id'] == 2): ?>
-                        <th>Color</th>
+                        <?php if ($data['dept_id'] == 3): ?>
+                            <th>Foot</th>
+                            <th>PCS</th>
+                            <th>RFT</th>
+                        <?php else: ?>
+                            <th style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?>">Unit</th>
+                            <?php if ($data['dept_id'] == 2): ?>
+                                <th>Color</th>
+                            <?php endif; ?>
+                            <?php if ($data['dept_id'] != 2): ?>
+                                <th>Pcs</th>
+                            <?php endif; ?>
+                            <th><?php echo ($data['dept_id'] == 2) ? 'Weight' : 'Kgs'; ?></th>
                         <?php endif; ?>
-                        <?php if ($data['dept_id'] != 2): ?>
-                        <th>Pcs</th>
-                        <?php endif; ?>
-                        <th><?php echo ($data['dept_id'] == 2) ? 'Weight' : 'Kgs'; ?></th>
                         <th>Rate</th>
                         <th>Amount</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php 
+                    $sr = 1;
                     $total_pcs = 0;
                     $total_kgs = 0;
+                    $total_feet = 0;
                     while($item = $items->fetch_assoc()): 
                         $total_pcs += $item['qty_pcs'];
                         $total_kgs += $item['qty_kgs'];
+                        $total_feet += $item['feet'];
                     ?>
                     <tr>
-                        <td><?php echo $item['prod_name']; ?></td>
-                        <td style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?>"><?php echo $item['unit']; ?></td>
-                        <?php if ($data['dept_id'] == 2): ?>
-                        <td><?php echo $item['color']; ?></td>
+                        <td style="border-right: 2px solid #000; text-align: center;"><?php echo ($sr++); ?></td>
+                        <td style="border-right: 2px solid #000;"><?php echo $item['prod_name']; ?><?php echo ($data['dept_id'] == 2 && !empty($item['color'])) ? " (".$item['color'].")" : ""; ?></td>
+                        
+                        <?php if ($data['dept_id'] == 3): ?>
+                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($item['feet'], 2); ?></td>
+                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($item['qty_pcs'], 2); ?></td>
+                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($item['qty_kgs'], 3); ?></td>
+                        <?php else: ?>
+                            <td style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?> border-right: 2px solid #000;"><?php echo $item['unit']; ?></td>
+                            <?php if ($data['dept_id'] == 2): ?>
+                                <td style="border-right: 2px solid #000;"><?php echo $item['color']; ?></td>
+                            <?php endif; ?>
+                            <?php if ($data['dept_id'] != 2): ?>
+                                <td style="border-right: 2px solid #000; text-align: right;"><?php echo $item['qty_pcs']; ?></td>
+                            <?php endif; ?>
+                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo $item['qty_kgs']; ?><?php echo ($data['dept_id'] == 2) ? ' kg' : ''; ?></td>
                         <?php endif; ?>
-                        <?php if ($data['dept_id'] != 2): ?>
-                        <td><?php echo $item['qty_pcs']; ?></td>
-                        <?php endif; ?>
-                        <td><?php echo $item['qty_kgs']; ?><?php echo ($data['dept_id'] == 2) ? ' kg' : ''; ?></td>
-                        <td><?php echo format_currency($item['rate']); ?></td>
-                        <td><?php echo format_currency($item['total']); ?></td>
+                        
+                        <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($item['rate'], 2); ?></td>
+                        <td style="text-align: right;"><?php echo number_format($item['total'], 2); ?></td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
-                <tfoot style="background: #fdfdfd; font-weight: bold; border-top: 2px solid #eee;">
+                <tfoot style="font-weight: bold; border-top: 2px solid #000;">
                     <tr>
-                        <td colspan="2">TOTAL</td>
-                        <?php if ($data['dept_id'] != 2): ?>
-                        <td><?php echo number_format($total_pcs, 2); ?></td>
+                        <td colspan="2" style="border-right: 2px solid #000;">TOTAL</td>
+                        <?php if ($data['dept_id'] == 3): ?>
+                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($total_feet, 2); ?></td>
+                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($total_pcs, 2); ?></td>
+                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($total_kgs, 3); ?></td>
+                        <?php else: ?>
+                            <td style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?> border-right: 2px solid #000;"></td>
+                            <?php if ($data['dept_id'] == 2): ?>
+                                <td style="border-right: 2px solid #000;"></td>
+                            <?php endif; ?>
+                            <?php if ($data['dept_id'] != 2): ?>
+                                <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($total_pcs, 2); ?></td>
+                            <?php endif; ?>
+                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($total_kgs, 2); ?><?php echo ($data['dept_id'] == 2) ? ' kg' : ''; ?></td>
                         <?php endif; ?>
-                        <td><?php echo number_format($total_kgs, 2); ?><?php echo ($data['dept_id'] == 2) ? ' kg' : ''; ?></td>
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>
             </table>
-            <?php else: ?>
-                <div style="padding: 20px; border: 1px solid #eee; margin-top: 20px;">
-                    <strong>Description:</strong><br>
-                    <?php echo $data['description'] ?: 'No details provided.'; ?>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($data['narration'])): ?>
-            <div style="margin-top: 20px; padding: 10px; border: 1px dashed #C9A14A; background: #fffcf5;">
-                <strong>Narration:</strong><br>
-                <?php echo nl2br(htmlspecialchars($data['narration'])); ?>
             </div>
-            <?php endif; ?>
 
-            <div class="total-box">
-                <table>
-                    <?php if ($items): ?>
-                    <tr>
-                        <td>Total Amount:</td>
-                        <td><?php echo format_currency($data['total_amount'] ?? 0); ?></td>
-                    </tr>
-                    <tr class="grand-total">
-                        <td>Grand Total:</td>
-                        <td><?php echo format_currency($data['total_amount'] ?? 0); ?></td>
-                    </tr>
-                    <?php else: ?>
-                    <tr class="grand-total">
-                        <td>Amount:</td>
-                        <td><?php echo format_currency($data['amount'] ?? 0); ?></td>
-                    </tr>
+            <div style="border: 2px solid #000; border-top: none; padding: 10px;" class="d-flex justify-content-between">
+                <div style="width: 60%;">
+                    <div class="fw-bold">Rs : <?php echo convert_to_words($data['total_amount'] ?? 0); ?> Only</div>
+                    <?php if ($data['dept_id'] == 2 || $data['dept_id'] == 3): ?>
+                        <div class="mt-3 small"><b>Colour : NEW ANODISE</b></div>
                     <?php endif; ?>
-                </table>
+                </div>
+                <div style="width: 35%; border-left: 2px solid #000; padding-left: 10px;">
+                    <div class="d-flex justify-content-between">
+                        <span>Sub Total</span>
+                        <span class="fw-bold"><?php echo number_format($data['total_amount'] ?? 0, 2); ?></span>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2 pt-2 border-top border-dark">
+                        <span class="fw-bold">Grand Total</span>
+                        <span class="fw-bold"><?php echo number_format($data['total_amount'] ?? 0, 2); ?></span>
+                    </div>
+                </div>
             </div>
 
             <div class="footer">
