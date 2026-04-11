@@ -380,14 +380,29 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
         }
 
         addBtn.addEventListener('click', () => {
-            const newRow = table.rows[0].cloneNode(true);
+            const firstRow = table.querySelector('.item-row');
+            const newRow = firstRow.cloneNode(true);
+            
+            // Clean up Select2 artifacts from cloned row
+            $(newRow).find('.select2-container').remove();
+            $(newRow).find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').removeAttr('aria-hidden');
+            $(newRow).find('select option').removeAttr('data-select2-id');
+
             newRow.querySelectorAll('input').forEach(i => {
                 if (i.classList.contains('item-total')) i.value = '0.00';
                 else i.value = '0';
             });
             newRow.querySelector('.unit-select').selectedIndex = 0;
             newRow.querySelector('.product-select').selectedIndex = 0;
+            
             table.appendChild(newRow);
+            
+            // Re-init Select2 on the new row's dropdowns
+            $(newRow).find('.form-select').select2({
+                theme: 'bootstrap-5',
+                width: '100%'
+            });
+            
             attachRowEvents(newRow);
         });
 
