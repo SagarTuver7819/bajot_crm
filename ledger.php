@@ -99,15 +99,24 @@ if ($party_id) {
 <div class="card card-bajot mb-4">
     <div class="card-body p-4">
         <form method="GET" class="row align-items-end g-3">
+            <div class="col-md-2">
+                <label class="form-label">Filter by Type</label>
+                <select id="typeFilter" class="form-select border-secondary">
+                    <option value="all">All Types</option>
+                    <option value="customer">Customer Only</option>
+                    <option value="supplier">Supplier Only</option>
+                    <option value="both">Both Only</option>
+                </select>
+            </div>
             <div class="col-md-4">
-                <label class="form-label">Select Party (Customer/Supplier)</label>
-                <select name="party_id" class="form-select border-secondary" required>
+                <label class="form-label">Select Party</label>
+                <select name="party_id" id="partySelect" class="form-select border-secondary" required>
                     <option value="">-- Choose Party --</option>
                     <?php 
                     $ps = $conn->query("SELECT id, name, type FROM parties ORDER BY name ASC");
                     while($p = $ps->fetch_assoc()) {
                         $sel = ($party_id == $p['id']) ? 'selected' : '';
-                        echo "<option value='{$p['id']}' $sel>{$p['name']} (".ucfirst($p['type']).")</option>";
+                        echo "<option value='{$p['id']}' data-type='{$p['type']}' $sel>{$p['name']} (".ucfirst($p['type']).")</option>";
                     }
                     ?>
                 </select>
@@ -181,16 +190,17 @@ if ($party_id) {
                         <td colspan="5" class="text-end fw-bold">Opening Balance</td>
                         <td class="text-end fw-bold"><?php echo format_currency($opening_balance); ?></td>
                     </tr>
-                    <?php if (empty($transactions)): ?>
+                    <?php 
+                    $running_balance = $opening_balance;
+                    if (empty($transactions)): ?>
                     <tr>
                         <td colspan="6" class="text-center py-4 text-muted small">No transactions found for the selected period.</td>
                     </tr>
                     <?php else: ?>
                     <?php 
-                    $running_balance = $opening_balance;
                     foreach ($transactions as $tr): 
                         $running_balance += ($tr['debit'] - $tr['credit']);
-                    ?>
+?>
                     <tr class="<?php echo ($tr['debit'] > 0) ? 'bg-dr' : 'bg-cr'; ?>">
                         <td><?php echo date('d-m-Y', strtotime($tr['date'])); ?></td>
                         <td>
@@ -264,6 +274,38 @@ if ($party_id) {
 </div>
 
 <script>
+        document.getElementById('typeFilter').addEventListener('change', function() {
+            const filterValue = this.value;
+            const options = document.querySelectorAll('#partySelect option');
+            options.forEach(opt => {
+                if (opt.value === "") return;
+                const type = opt.getAttribute('data-type');
+                
+                let show = false;
+                if (filterValue === 'all') show = true;
+                else if (filterValue === 'customer' && (type === 'customer' || type === 'both')) show = true;
+                else if (filterValue === 'supplier' && (type === 'supplier' || type === 'both')) show = true;
+                else if (filterValue === 'both' && type === 'both') show = true;
+
+                opt.style.display = show ? 'block' : 'none';
+            });
+            // Reset selection if hidden
+            const selectedOpt = document.querySelector('#partySelect option:checked');
+            if (selectedOpt && selectedOpt.style.display === 'none') {
+                document.getElementById('partySelect').value = "";
+            }
+        });
+
+    // Trigger filter on load to match selected party
+    window.addEventListener('DOMContentLoaded', () => {
+         const partySelect = document.getElementById('partySelect');
+         const selectedOpt = partySelect.querySelector('option:checked');
+         if (selectedOpt && selectedOpt.value !== "") {
+            const type = selectedOpt.getAttribute('data-type');
+            document.getElementById('typeFilter').value = type;
+         }
+    });
+
 function openKasarModal(balance) {
     const amount = Math.abs(balance);
     const type = balance > 0 ? 'allowed' : 'received';
