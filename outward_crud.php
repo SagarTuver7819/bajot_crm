@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
     $date = trim($_POST['date']);
     $bill_no = trim($_POST['bill_no']);
     $narration = trim($_POST['narration']);
+    $transport_charge = (float)($_POST['transport_charge'] ?? 0);
     
     $product_ids = $_POST['product_id'];
     $colors = $_POST['color'] ?? [];
@@ -96,8 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
             }
         }
         
-        $total_amount = $sub_total;
-        $conn->query("UPDATE outwards SET sub_total=$sub_total, gst_amount=0, total_amount=$total_amount WHERE id=$outward_id");
+        $total_amount = $sub_total + $transport_charge;
+        $conn->query("UPDATE outwards SET sub_total=$sub_total, transport_charge=$transport_charge, gst_amount=0, total_amount=$total_amount WHERE id=$outward_id");
         
         $conn->commit();
         redirect('outward_crud.php?success=1');
@@ -398,8 +399,13 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                     <div class="col-md-4">
                         <div class="card card-bajot border-gold p-3">
                             <div class="d-flex justify-content-between mb-2">
-                                <span>Total Amount:</span>
                                 <span id="lblSubTotal">₹<?php echo $outward ? number_format($outward['sub_total'], 2) : '0.00'; ?></span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Transport Charge (+):</span>
+                                <div style="width: 100px;">
+                                    <input type="number" step="0.01" name="transport_charge" id="transportChargeInput" class="form-control form-control-sm text-end" value="<?php echo $outward ? $outward['transport_charge'] : '0.00'; ?>">
+                                </div>
                             </div>
                             <div class="d-flex justify-content-between fw-bold border-top border-secondary pt-2">
                                 <span style="color: var(--gold);">GRAND TOTAL:</span>
@@ -478,11 +484,15 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
             document.querySelectorAll('.item-total').forEach(input => {
                 sub += parseFloat(input.value) || 0;
             });
-            const grand = sub;
-            
             document.getElementById('lblSubTotal').innerText = '₹' + sub.toFixed(2);
+            
+            const transport = parseFloat(document.getElementById('transportChargeInput').value) || 0;
+            const grand = sub + transport;
+            
             document.getElementById('lblGrandTotal').innerText = '₹' + grand.toFixed(2);
         }
+
+        document.getElementById('transportChargeInput').addEventListener('input', calculateGrand);
 
         addBtn.addEventListener('click', () => {
             const newRow = table.rows[0].cloneNode(true);

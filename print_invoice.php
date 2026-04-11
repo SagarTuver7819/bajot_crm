@@ -98,7 +98,7 @@ function convert_to_words($number) {
     <title>Print | Kaizer CRM</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 0; padding: 20px; background-color: #f8f9fa; }
-        .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; background: #fff; box-shadow: 0 0 10px rgba(0, 0, 0, 0.15); font-size: 14px; line-height: 24px; color: #555; }
+        .invoice-box { max-width: 800px; margin: auto; padding: 0; background: #fff; font-size: 13px; line-height: 20px; color: #000; }
         .header { display: flex; justify-content: space-between; border-bottom: 2px solid #C9A14A; padding-bottom: 20px; margin-bottom: 20px; }
         .header h1 { color: #C9A14A; margin: 0; font-size: 28px; }
         .details { display: flex; justify-content: space-between; margin-bottom: 20px; }
@@ -122,10 +122,36 @@ function convert_to_words($number) {
         .justify-content-between { justify-content: space-between; }
         
         @media print {
+            @page { size: A4 portrait; margin: 5mm; }
             body { padding: 0; background: none; }
             .no-print { display: none !important; }
-            .invoice-box { box-shadow: none; border: none; max-width: 100%; margin: 0; padding: 0; }
+            .invoice-box { 
+                box-shadow: none; 
+                border: 2px solid #000; 
+                width: 100%; 
+                max-width: 100%; 
+                height: 140mm; /* Target half A4 height */
+                overflow: hidden;
+                margin: 0; 
+            }
         }
+
+        .m-0 { margin: 0; }
+        .p-2 { padding: 8px; }
+        .border-all { border: 2px solid #000; }
+        .border-top-none { border-top: none; }
+        .border-right-dark { border-right: 2px solid #000; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .fw-bold { font-weight: bold; }
+        .d-flex { display: flex; }
+        .justify-content-between { justify-content: space-between; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 0; }
+        table th, table td { border-right: 2px solid #000; padding: 5px 8px; font-size: 13px; }
+        table th { border-bottom: 2px solid #000; background: #fff; }
+        table tr td:last-child, table tr th:last-child { border-right: none; }
+        .small-text { font-size: 12px; }
 
         .btn-toolbar {
             margin: 0 auto 30px auto;
@@ -200,15 +226,15 @@ function convert_to_words($number) {
         <?php endif; ?>
     </div>
     
-    <div id="invoice-content">
-        <div class="invoice-box">
-            <!-- Miracle Style Layout -->
-            <div class="text-center mb-0">
-                <h1 style="color: #6b4e1a; margin-bottom: 0; letter-spacing: 2px;"><?php echo strtoupper($s['company_name']); ?></h1>
-                <h5 style="margin-top: 0; margin-bottom: 10px; text-decoration: underline;">ESTIMATE</h5>
+    <div id="invoice-content" style="background: #fff;">
+        <div class="invoice-box" style="border: 2px solid #000; padding: 0; max-width: 850px;">
+            <!-- Header Section -->
+            <div class="text-center p-2" style="border-bottom: 2px solid #000;">
+                <h1 style="color: #6b4e1a; margin: 0; letter-spacing: 2px; font-size: 28px;"><?php echo strtoupper($s['company_name']); ?></h1>
+                <p class="m-0 small-text"><?php echo $s['company_address']; ?></p>
             </div>
 
-            <div class="d-flex justify-content-between">
+            <div class="d-flex justify-content-between p-2" style="border-bottom: 2px solid #000;">
                 <div class="fw-bold">DEBIT MEMO</div>
                 <div class="text-center">
                     <h3 style="margin: 0; text-decoration: underline; font-weight: 800;"><?php echo $title; ?></h3>
@@ -216,40 +242,43 @@ function convert_to_words($number) {
                 <div class="fw-bold">ORIGINAL</div>
             </div>
 
-            <div style="border: 2px solid #000; margin-top: 10px; padding: 10px;">
-                <div class="d-flex justify-content-between">
-                    <div style="width: 70%;">
-                        <strong>M/s.: <?php echo strtoupper($data['name']); ?></strong><br>
-                        <div style="margin-left: 35px;">
-                            <?php echo $data['address']; ?>
-                        </div>
+            <!-- Party Details -->
+            <div class="d-flex justify-content-between border-top-none" style="border-bottom: 2px solid #000;">
+                <div style="width: 70%; padding: 10px;">
+                    <strong>M/s.: <?php echo strtoupper($data['name']); ?></strong><br>
+                    <div style="margin-left: 35px; min-height: 40px;">
+                        <?php echo $data['address']; ?>
                     </div>
-                    <div style="width: 25%; border-left: 2px solid #000; padding-left: 10px;">
-                        <div>NO. : <b><?php echo $data['bill_no'] ?? $data['id']; ?></b></div>
-                        <div>DATE : <b><?php echo date('d/m/Y', strtotime($data['date'])); ?></b></div>
-                    </div>
+                </div>
+                <div style="width: 30%; border-left: 2px solid #000; padding: 10px;">
+                    <div>NO. : <b><?php echo $data['bill_no'] ?? $data['id']; ?></b></div>
+                    <div style="margin-top: 5px;">DATE : <b><?php echo date('d/m/Y', strtotime($data['date'])); ?></b></div>
                 </div>
             </div>
 
+            <!-- Items Table -->
             <?php if ($items): ?>
-            <table>
-                <thead>
-                        <th>Item Description</th>
+            <div style="min-height: 220px; border-bottom: 2px solid #000;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">Sr</th>
+                            <th style="width: 45%; text-align: left;">Description</th>
                         <?php if ($data['dept_id'] == 3): ?>
-                            <th>Foot</th>
-                            <th>PCS</th>
-                            <th>RFT</th>
+                            <th style="border-right: 2px solid #000;">Foot</th>
+                            <th style="border-right: 2px solid #000;">PCS</th>
+                            <th style="border-right: 2px solid #000;">RFT</th>
                         <?php else: ?>
-                            <th style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?>">Unit</th>
+                            <th style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?> border-right: 2px solid #000;">Unit</th>
                             <?php if ($data['dept_id'] == 2): ?>
-                                <th>Color</th>
+                                <th style="border-right: 2px solid #000;">Color</th>
                             <?php endif; ?>
                             <?php if ($data['dept_id'] != 2): ?>
-                                <th>Pcs</th>
+                                <th style="border-right: 2px solid #000;">Pcs</th>
                             <?php endif; ?>
-                            <th><?php echo ($data['dept_id'] == 2) ? 'Weight' : 'Kgs'; ?></th>
+                            <th style="border-right: 2px solid #000;"><?php echo ($data['dept_id'] == 2) ? 'Weight' : 'Kgs'; ?></th>
                         <?php endif; ?>
-                        <th>Rate</th>
+                        <th style="border-right: 2px solid #000;">Rate</th>
                         <th>Amount</th>
                     </tr>
                 </thead>
@@ -288,52 +317,68 @@ function convert_to_words($number) {
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
-                <tfoot style="font-weight: bold; border-top: 2px solid #000;">
+                <tfoot style="font-weight: bold; border-top: 2px solid #000; background: #fdfdfd;">
                     <tr>
-                        <td colspan="2" style="border-right: 2px solid #000;">TOTAL</td>
+                        <td colspan="2">TOTAL</td>
                         <?php if ($data['dept_id'] == 3): ?>
-                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($total_feet, 2); ?></td>
-                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($total_pcs, 2); ?></td>
-                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($total_kgs, 3); ?></td>
+                            <td class="text-right"><?php echo number_format($total_feet, 2); ?></td>
+                            <td class="text-right"><?php echo number_format($total_pcs, 2); ?></td>
+                            <td class="text-right"><?php echo number_format($total_kgs, 3); ?></td>
                         <?php else: ?>
-                            <td style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?> border-right: 2px solid #000;"></td>
+                            <td style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?>"></td>
                             <?php if ($data['dept_id'] == 2): ?>
-                                <td style="border-right: 2px solid #000;"></td>
+                                <td></td>
                             <?php endif; ?>
                             <?php if ($data['dept_id'] != 2): ?>
-                                <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($total_pcs, 2); ?></td>
+                                <td class="text-right"><?php echo number_format($total_pcs, 2); ?></td>
                             <?php endif; ?>
-                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($total_kgs, 2); ?><?php echo ($data['dept_id'] == 2) ? ' kg' : ''; ?></td>
+                            <td class="text-right"><?php echo number_format($total_kgs, 2); ?><?php echo ($data['dept_id'] == 2) ? ' kg' : ''; ?></td>
                         <?php endif; ?>
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>
             </table>
             </div>
+            <?php else: ?>
+            <div style="border-bottom: 2px solid #000; padding: 15px; min-height: 200px;">
+                <strong>Description:</strong><br>
+                <?php echo $data['description'] ?: 'No details provided.'; ?>
+                <?php if (isset($data['amount'])): ?>
+                    <div class="mt-3 fs-5">Amount: <b><?php echo format_currency($data['amount']); ?></b></div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
 
-            <div style="border: 2px solid #000; border-top: none; padding: 10px;" class="d-flex justify-content-between">
-                <div style="width: 60%;">
-                    <div class="fw-bold">Rs : <?php echo convert_to_words($data['total_amount'] ?? 0); ?> Only</div>
+            <!-- Footer / Totals Section -->
+            <div class="d-flex justify-content-between p-0">
+                <div style="width: 65%; padding: 5px;" class="fw-bold">
+                    <div style="margin-top: 5px; font-size: 11px;">Rs : <?php echo convert_to_words($data['total_amount'] ?? $data['amount'] ?? 0); ?> Only</div>
                     <?php if ($data['dept_id'] == 2 || $data['dept_id'] == 3): ?>
-                        <div class="mt-3 small"><b>Colour : NEW ANODISE</b></div>
+                        <div style="margin-top: 5px; font-size: 11px;">Colour : NEW ANODISE</div>
                     <?php endif; ?>
                 </div>
-                <div style="width: 35%; border-left: 2px solid #000; padding-left: 10px;">
-                    <div class="d-flex justify-content-between">
+                <div style="width: 35%; border-left: 2px solid #000; padding: 0;">
+                    <div class="d-flex justify-content-between p-1" style="border-bottom: 1px solid #000; font-size: 12px;">
                         <span>Sub Total</span>
-                        <span class="fw-bold"><?php echo number_format($data['total_amount'] ?? 0, 2); ?></span>
+                        <span class="fw-bold"><?php echo number_format($data['sub_total'] ?? $data['amount'] ?? 0, 2); ?></span>
                     </div>
-                    <div class="d-flex justify-content-between mt-2 pt-2 border-top border-dark">
-                        <span class="fw-bold">Grand Total</span>
-                        <span class="fw-bold"><?php echo number_format($data['total_amount'] ?? 0, 2); ?></span>
+                    <?php if (($data['transport_charge'] ?? 0) > 0): ?>
+                    <div class="d-flex justify-content-between p-1" style="border-bottom: 1px solid #000; font-size: 11px;">
+                        <span>Transport Ch.</span>
+                        <span class="fw-bold"><?php echo number_format($data['transport_charge'], 2); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <div class="d-flex justify-content-between p-1" style="font-size: 13px;">
+                        <span class="fw-bold">Total</span>
+                        <span class="fw-bold"><?php echo number_format($data['total_amount'] ?? $data['amount'] ?? 0, 2); ?></span>
                     </div>
                 </div>
             </div>
 
-            <div class="footer">
-                <p>Thank you for your business!</p>
-                <p>This is a computer generated invoice.</p>
+            <div class="text-center p-2 small-text" style="border-top: 2px solid #000;">
+                Thank you for your business! This is a computer generated invoice.
             </div>
+
         </div>
     </div>
 
