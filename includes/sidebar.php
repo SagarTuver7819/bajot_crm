@@ -62,6 +62,10 @@
             <i class="fa fa-book"></i> <span>Party Ledger</span>
         </a>
 
+        <a href="party_balances.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'party_balances.php') ? 'active' : ''; ?>">
+            <i class="fa fa-list-check"></i> <span>Party Balances</span>
+        </a>
+
         <a href="kasar.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'kasar.php') ? 'active' : ''; ?>">
             <i class="fa fa-adjust"></i> <span>Kasar / Adjustment</span>
         </a>
