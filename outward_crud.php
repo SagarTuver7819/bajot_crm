@@ -12,6 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
     $bill_no = trim($_POST['bill_no']);
     $narration = trim($_POST['narration']);
     $transport_charge = (float)($_POST['transport_charge'] ?? 0);
+    $discount_percent = (float)($_POST['discount'] ?? 0);
     
     $product_ids = $_POST['product_id'];
     $colors = $_POST['color'] ?? [];
@@ -97,8 +98,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
             }
         }
         
-        $total_amount = $sub_total + $transport_charge;
-        $conn->query("UPDATE outwards SET sub_total=$sub_total, transport_charge=$transport_charge, gst_amount=0, total_amount=$total_amount WHERE id=$outward_id");
+        $discount = ($sub_total * $discount_percent) / 100;
+        $total_amount = ($sub_total - $discount) + $transport_charge;
+        $conn->query("UPDATE outwards SET sub_total=$sub_total, discount=$discount, transport_charge=$transport_charge, gst_amount=0, total_amount=$total_amount WHERE id=$outward_id");
         
         $conn->commit();
         redirect('outward_crud.php?success=1');
@@ -399,7 +401,14 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                     <div class="col-md-4">
                         <div class="card card-bajot border-gold p-3">
                             <div class="d-flex justify-content-between mb-2">
+                                <span class="small opacity-75">Sub Total:</span>
                                 <span id="lblSubTotal">₹<?php echo $outward ? number_format($outward['sub_total'], 2) : '0.00'; ?></span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Discount (%):</span>
+                                <div style="width: 100px;">
+                                    <input type="number" step="0.01" name="discount" id="discountPercentInput" class="form-control form-control-sm text-end" value="<?php echo $outward ? round(($outward['discount'] / ($outward['sub_total'] ?: 1)) * 100, 2) : '0.00'; ?>">
+                                </div>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Transport Charge (+):</span>
@@ -487,12 +496,15 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
             document.getElementById('lblSubTotal').innerText = '₹' + sub.toFixed(2);
             
             const transport = parseFloat(document.getElementById('transportChargeInput').value) || 0;
-            const grand = sub + transport;
+            const discountPercent = parseFloat(document.getElementById('discountPercentInput').value) || 0;
+            const discountAmount = (sub * discountPercent) / 100;
+            const grand = (sub - discountAmount) + transport;
             
             document.getElementById('lblGrandTotal').innerText = '₹' + grand.toFixed(2);
         }
 
         document.getElementById('transportChargeInput').addEventListener('input', calculateGrand);
+        document.getElementById('discountPercentInput').addEventListener('input', calculateGrand);
 
         addBtn.addEventListener('click', () => {
             const newRow = table.rows[0].cloneNode(true);

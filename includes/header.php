@@ -46,10 +46,46 @@ if ($current_page !== 'index.php' && $current_page !== 'login.php' && $current_p
     <!-- DataTables CSS -->
     <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
     <!-- Custom CSS -->
     <link href="assets/css/style.css" rel="stylesheet">
-    
+
     <style>
+        /* Select2 Theme Tweaks */
+        .select2-container--bootstrap-5 .select2-selection {
+            border: 1px solid <?php echo ($theme === 'dark' ? 'rgba(255,255,255,0.1)' : '#dee2e6'); ?> !important;
+            background-color: <?php echo ($theme === 'dark' ? '#1a1a27' : '#fff'); ?> !important;
+            color: <?php echo ($theme === 'dark' ? '#fff' : '#212529'); ?> !important;
+        }
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            color: <?php echo ($theme === 'dark' ? '#fff' : '#212529'); ?> !important;
+        }
+        .select2-dropdown {
+            background-color: <?php echo ($theme === 'dark' ? '#1a1a27' : '#fff'); ?> !important;
+            color: <?php echo ($theme === 'dark' ? '#fff' : '#212529'); ?> !important;
+            border: 1px solid <?php echo ($theme === 'dark' ? '#323248' : '#dee2e6'); ?> !important;
+        }
+        .select2-container--bootstrap-5 .select2-search__field {
+            background-color: <?php echo ($theme === 'dark' ? '#2b2b40' : '#fff'); ?> !important;
+            color: <?php echo ($theme === 'dark' ? '#fff' : '#212529'); ?> !important;
+        }
+        .select2-results__option--highlighted {
+            background-color: var(--gold) !important;
+            color: #000 !important;
+        }
+
+        /* Fix Select2 in Input Groups */
+        .input-group .select2-container--bootstrap-5 {
+            flex: 1 1 auto;
+            width: 1% !important;
+        }
+        .input-group .select2-container--bootstrap-5 .select2-selection {
+            border-top-right-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+        }
         /* Small fixes for Dark/Light mode depending on session */
         <?php if ($theme === 'dark'): ?>
         body { background-color: var(--dark-bg); color: var(--text-light); }

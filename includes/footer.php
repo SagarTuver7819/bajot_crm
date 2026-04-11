@@ -18,9 +18,23 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
     <!-- Custom Theme Logic -->
     <script>
         $(document).ready(function() {
+            // Select2 Global Init
+            $('.form-select').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: $(this).data('placeholder'),
+            });
+
+            // Auto-focus search field on open
+            $(document).on('select2:open', () => {
+                document.querySelector('.select2-search__field').focus();
+            });
             // DataTables Global Init
             $('.datatable').DataTable({
                 responsive: true,
