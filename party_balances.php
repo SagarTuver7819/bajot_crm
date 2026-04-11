@@ -12,15 +12,13 @@ $sql = "SELECT
             p.mobile,
             p.address,
             p.type as party_type,
-            (
-                COALESCE(p.opening_balance, 0) +
-                COALESCE((SELECT SUM(total_amount) FROM outwards WHERE party_id = p.id), 0) +
-                COALESCE((SELECT SUM(amount) FROM vouchers WHERE party_id = p.id AND type IN ('payment', 'expense')), 0) +
-                COALESCE((SELECT SUM(amount) FROM kasars WHERE party_id = p.id AND type = 'received' AND dept_id = $dept_id), 0) -
-                COALESCE((SELECT SUM(total_amount) FROM inwards WHERE party_id = p.id), 0) -
-                COALESCE((SELECT SUM(amount) FROM vouchers WHERE party_id = p.id AND type = 'receipt'), 0) -
-                COALESCE((SELECT SUM(amount) FROM kasars WHERE party_id = p.id AND type = 'allowed' AND dept_id = $dept_id), 0)
-            ) as balance
+            (COALESCE(p.opening_balance, 0)) as opening,
+            (COALESCE((SELECT SUM(total_amount) FROM outwards WHERE party_id = p.id), 0)) as sales,
+            (COALESCE((SELECT SUM(amount) FROM vouchers WHERE party_id = p.id AND type IN ('payment', 'expense')), 0)) as payments_made,
+            (COALESCE((SELECT SUM(amount) FROM kasars WHERE party_id = p.id AND type = 'received' AND dept_id = $dept_id), 0)) as kasar_rec,
+            (COALESCE((SELECT SUM(total_amount) FROM inwards WHERE party_id = p.id), 0)) as purchases,
+            (COALESCE((SELECT SUM(amount) FROM vouchers WHERE party_id = p.id AND type = 'receipt'), 0)) as receipts_taken,
+            (COALESCE((SELECT SUM(amount) FROM kasars WHERE party_id = p.id AND type = 'allowed' AND dept_id = $dept_id), 0)) as kasar_all
         FROM parties p
         ORDER BY p.name ASC";
 
@@ -31,16 +29,60 @@ $total_payable = 0;
 $parties_data = [];
 
 while ($row = $result->fetch_assoc()) {
-    $balance = (float)$row['balance'];
-    if ($balance > 0.01) {
-        $total_receivable += $balance;
-    } elseif ($balance < -0.01) {
-        $total_payable += abs($balance);
+    $opening = (float)$row['opening'];
+    $sales = (float)$row['sales'];
+    $purchases = (float)$row['purchases'];
+    $payments_made = (float)$row['payments_made'];
+    $receipts_taken = (float)$row['receipts_taken'];
+    $kasar_rec = (float)$row['kasar_rec'];
+    $kasar_all = (float)$row['kasar_all'];
+
+
+    // Handle Opening Balance sign based on Party Type
+    $adj_opening = $opening;
+    if ($row['party_type'] == 'supplier') {
+        $adj_opening = -$opening; // Suppliers usually have Credit opening balances
+    }
+    // For 'both' and 'customer', we treat positive as Debit (Receivable) by default
+    
+    // Net Calculation for "Consolidated"
+    $net_balance = $adj_opening + $sales + $payments_made + $kasar_rec - $purchases - $receipts_taken - $kasar_all;
+    $row['balance'] = $net_balance; // For Consolidated view
+
+    // Receivable Part Calculation
+    $rec_part = 0;
+    if ($row['party_type'] == 'customer') {
+        $rec_part = $net_balance;
+    } elseif ($row['party_type'] == 'both') {
+        // For 'Both', we use the standard opening if > 0 as receivable part
+        $rec_part = ($opening > 0 ? $opening : 0) + $sales + $kasar_rec - $receipts_taken;
     }
     
-    // Filter by type if requested
-    if ($report_type == 'receivable' && $balance <= 0.01) continue;
-    if ($report_type == 'payable' && $balance >= -0.01) continue;
+    // Payable Part Calculation
+    $pay_part = 0;
+    if ($row['party_type'] == 'supplier') {
+        $pay_part = -$net_balance;
+    } elseif ($row['party_type'] == 'both') {
+        // For 'Both', we use the standard opening if < 0 as payable part
+        $pay_part = ($opening < 0 ? abs($opening) : 0) + $purchases + $kasar_all - $payments_made;
+    }
+    // summary calculations for the Cards (Consolidated View)
+    if ($net_balance > 0.01) {
+        $total_receivable += $net_balance;
+    } elseif ($net_balance < -0.01) {
+        $total_payable += abs($net_balance);
+    }
+    
+    // Special display filtering for dedicated reports
+    if ($report_type == 'receivable') {
+        if ($rec_part <= 0.01) continue;
+        $row['report_balance'] = $rec_part;
+    } elseif ($report_type == 'payable') {
+        if ($pay_part <= 0.01) continue;
+        $row['report_balance'] = $pay_part;
+    } else {
+        $row['report_balance'] = $net_balance;
+    }
     
     $parties_data[] = $row;
 }
@@ -81,7 +123,13 @@ while ($row = $result->fetch_assoc()) {
             </div>
         </div>
         <div class="d-flex gap-2">
-            <button onclick="window.print()" class="btn btn-outline-secondary">
+            <select id="typeFilter" class="form-select form-select-sm border-secondary no-print" style="width: 150px;">
+                <option value="all">All Types</option>
+                <option value="customer">Customer</option>
+                <option value="supplier">Supplier</option>
+                <option value="both">Both</option>
+            </select>
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
                 <i class="fa fa-print me-1"></i> Print Miracle Report
             </button>
         </div>
@@ -147,11 +195,12 @@ while ($row = $result->fetch_assoc()) {
                     $shown_total = 0;
                     foreach($parties_data as $party): 
                         $bal = (float)$party['balance'];
-                        if (abs($bal) < 0.01) continue; 
+                        $report_bal = (float)$party['report_balance'];
+                        if (abs($bal) < 0.01 && abs($report_bal) < 0.01) continue; 
                         $p_count++;
-                        $shown_total += abs($bal);
+                        $shown_total += abs($report_bal);
                     ?>
-                    <tr>
+                    <tr class="party-row" data-type="<?php echo $party['party_type']; ?>">
                         <td class="accounting-party-name">
                             <div class="fw-bold"><?php echo htmlspecialchars($party['name']); ?></div>
                         </td>
@@ -182,7 +231,7 @@ while ($row = $result->fetch_assoc()) {
                             </a>
                         </td>
                         <?php else: ?>
-                        <td class="text-end accounting-amount"><?php echo number_format(abs($bal), 2); ?></td>
+                        <td class="text-end accounting-amount"><?php echo number_format(abs($report_bal), 2); ?></td>
                         <?php endif; ?>
                     </tr>
                     <?php endforeach; ?>
@@ -268,6 +317,25 @@ while ($row = $result->fetch_assoc()) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Row filtering by Type
+    const typeFilter = document.getElementById('typeFilter');
+    if (typeFilter) {
+        typeFilter.addEventListener('change', function() {
+            const filterValue = this.value;
+            const rows = document.querySelectorAll('.party-row');
+            rows.forEach(row => {
+                const type = row.getAttribute('data-type');
+                let show = false;
+                if (filterValue === 'all') show = true;
+                else if (filterValue === 'customer' && (type === 'customer' || type === 'both')) show = true;
+                else if (filterValue === 'supplier' && (type === 'supplier' || type === 'both')) show = true;
+                else if (filterValue === 'both' && type === 'both') show = true;
+                
+                row.style.display = show ? '' : 'none';
+            });
+        });
+    }
+
     if (typeof jQuery !== 'undefined' && typeof $.fn.DataTable !== 'undefined') {
         const reportType = '<?php echo $report_type; ?>';
         $('#balancesTable').DataTable({
