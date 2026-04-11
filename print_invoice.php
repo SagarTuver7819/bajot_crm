@@ -358,13 +358,21 @@ function convert_to_words($number) {
                     <?php endif; ?>
                 </div>
                 <div style="width: 35%; border-left: 2px solid #000; padding: 0;">
-                    <div class="d-flex justify-content-between p-1" style="border-bottom: 1px solid #000; font-size: 12px;">
+                    <div class="d-flex justify-content-between p-1" style="border-bottom: 1px solid #000; font-size: 11px;">
                         <span>Sub Total</span>
                         <span class="fw-bold"><?php echo number_format($data['sub_total'] ?? $data['amount'] ?? 0, 2); ?></span>
                     </div>
+                    <?php if (($data['discount'] ?? 0) > 0): 
+                        $disc_p = round(($data['discount'] / ($data['sub_total'] ?: 1)) * 100, 2);
+                    ?>
+                    <div class="d-flex justify-content-between p-1" style="border-bottom: 1px solid #000; font-size: 11px;">
+                        <span>Discount (<?php echo $disc_p; ?>%) (-)</span>
+                        <span class="fw-bold"><?php echo number_format($data['discount'], 2); ?></span>
+                    </div>
+                    <?php endif; ?>
                     <?php if (($data['transport_charge'] ?? 0) > 0): ?>
                     <div class="d-flex justify-content-between p-1" style="border-bottom: 1px solid #000; font-size: 11px;">
-                        <span>Transport Ch.</span>
+                        <span>Transport Ch. (+)</span>
                         <span class="fw-bold"><?php echo number_format($data['transport_charge'], 2); ?></span>
                     </div>
                     <?php endif; ?>
