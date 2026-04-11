@@ -11,8 +11,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($mode === 'add' || $mode === 'edit') {
         $name = trim($_POST['name']);
-        $type = trim($_POST['type']);
-        $mobile = trim($_POST['mobile']);
         $address = trim($_POST['address']);
         $opening_balance = (float)$_POST['opening_balance'];
 
