@@ -148,30 +148,27 @@ function convert_to_words($number) {
         @media print {
             @page { 
                 size: A4 portrait; 
-                margin: 0; 
+                margin: 15mm; 
             }
             body { padding: 0; background: none; }
             .no-print { display: none !important; }
             .invoice-box { 
                 box-shadow: none; 
                 border: none; 
-                padding: 10mm; 
-                width: 190mm; /* A4 width minus margins */
-                height: 138mm; /* Slightly less than half of 297mm A4 height */
-                max-height: 138mm;
-                overflow: hidden;
-                margin: 0 auto;
-                position: relative;
+                padding: 0; 
+                width: 100%; 
+                height: auto;
+                overflow: visible;
+                margin: 0;
             }
             .invoice-footer { 
-                position: absolute; 
-                bottom: 10mm; 
-                left: 0; 
-                right: 0; 
+                margin-top: 60px;
                 text-align: center; 
+                border-top: 1px solid #eee;
+                padding-top: 20px;
             }
-            .accounting-table { margin-top: 10px; }
-            .totals-container { margin-top: 20px; }
+            .accounting-table { margin-top: 20px; }
+            .totals-container { margin-top: 30px; }
         }
     </style>
 </head>
@@ -194,95 +191,109 @@ function convert_to_words($number) {
                     <?php if (!empty($s['company_logo']) && file_exists($s['company_logo'])): ?>
                         <img src="<?php echo $s['company_logo']; ?>" alt="Logo">
                     <?php else: ?>
-                        <div class="company-title"><?php echo strtoupper($s['company_name']); ?></div>
+                        <div class="company-title" style="font-size: 32px; font-weight: 800; color: #C9A14A;"><?php echo strtoupper($s['company_name']); ?></div>
                     <?php endif; ?>
                 </div>
                 <div class="title-section">
-                    <div class="estimate-text" style="font-size: 20px;"><?php echo strtoupper($title); ?></div>
+                    <div class="estimate-text" style="font-size: 24px; font-weight: 800; margin-bottom: 5px;"><?php echo strtoupper($title); ?></div>
                     <?php if (isset($data['dept_id']) && isset($departments[$data['dept_id']])): ?>
-                        <div style="font-size: 13px; color: #C9A14A; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">
+                        <div style="font-size: 13px; color: #C9A14A; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 2px;">
                             <?php echo $departments[$data['dept_id']]; ?>
                         </div>
                     <?php endif; ?>
-                    <div class="bill-info">
+                    <div class="bill-info" style="font-size: 14px; line-height: 1.6;">
                         Bill No: <b>#<?php echo $data['bill_no'] ?? $data['id']; ?></b><br>
                         Date: <b><?php echo date('d-m-Y', strtotime($data['date'])); ?></b>
                     </div>
                 </div>
             </div>
 
-            <div class="company-address" style="margin-bottom: 20px;">
+            <div class="company-address" style="margin-bottom: 20px; font-size: 14px; color: #666; width: 60%; line-height: 1.6;">
                 <?php echo $s['company_address']; ?>
             </div>
 
-            <div class="gold-line" style="margin: 20px 0;"></div>
+            <div class="gold-line" style="border-top: 3px solid #C9A14A; margin: 30px 0;"></div>
 
-            <div class="billed-to-label">Billed To:</div>
-            <div class="billed-to-content" style="margin-bottom: 25px;">
-                <span class="billed-to-name"><?php echo $data['name']; ?></span>
+            <div class="billed-to-label" style="font-size: 14px; font-weight: 800;">Billed To:</div>
+            <div class="billed-to-content" style="margin-bottom: 40px; font-size: 15px; line-height: 1.8;">
+                <span class="billed-to-name" style="font-size: 18px; font-weight: 800; text-transform: uppercase; display: block; margin-bottom: 5px;"><?php echo $data['name']; ?></span>
                 <?php if($data['address']): ?>
                     <?php echo nl2br(strtoupper($data['address'])); ?><br>
                 <?php endif; ?>
                 <?php if($data['mobile']): ?>
-                    Mobile: <?php echo $data['mobile']; ?>
+                    Mobile: <b><?php echo $data['mobile']; ?></b>
                 <?php endif; ?>
             </div>
 
-            <table class="accounting-table">
+            <table class="accounting-table" style="width: 100%; border-collapse: collapse;">
                 <thead>
-                    <tr>
-                        <th style="width: 45%; padding: 8px 10px;">Item Description</th>
-                        <th class="text-center" style="width: 10%; padding: 8px 10px;">Unit</th>
-                        <th class="text-right" style="width: 10%; padding: 8px 10px;">Pcs</th>
-                        <th class="text-right" style="width: 10%; padding: 8px 10px;">Kgs</th>
-                        <th class="text-right" style="width: 12%; padding: 8px 10px;">Rate</th>
-                        <th class="text-right" style="width: 13%; padding: 8px 10px;">Amount</th>
+                    <tr style="background: #f9f9f9; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
+                        <th style="width: 45%; padding: 12px 10px; font-weight: 800;">Item Description</th>
+                        <th class="text-center" style="width: 10%; padding: 12px 10px;">Unit</th>
+                        <th class="text-right" style="width: 10%; padding: 12px 10px;">Pcs</th>
+                        <th class="text-right" style="width: 10%; padding: 12px 10px;">Kgs</th>
+                        <th class="text-right" style="width: 12%; padding: 12px 10px;">Rate</th>
+                        <th class="text-right" style="width: 13%; padding: 12px 10px;">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if ($items): while($item = $items->fetch_assoc()): ?>
-                    <tr>
-                        <td style="padding: 10px;">
+                    <?php 
+                    $total_pcs = 0;
+                    $total_kgs = 0;
+                    if ($items): while($item = $items->fetch_assoc()): 
+                        $total_pcs += $item['qty_pcs'];
+                        $total_kgs += $item['qty_kgs'];
+                    ?>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 12px 10px;">
                             <?php echo $item['prod_name']; ?>
                             <?php if (!empty($item['color'])) echo " (".$item['color'].")"; ?>
                         </td>
-                        <td class="text-center" style="padding: 10px;"><?php echo $item['unit']; ?></td>
-                        <td class="text-right" style="padding: 10px;"><?php echo number_format($item['qty_pcs'], 2); ?></td>
-                        <td class="text-right" style="padding: 10px;"><?php echo number_format($item['qty_kgs'], 2); ?></td>
-                        <td class="text-right" style="padding: 10px;">₹<?php echo number_format($item['rate'], 2); ?></td>
-                        <td class="text-right" style="padding: 10px;"><b>₹<?php echo number_format($item['total'], 2); ?></b></td>
+                        <td class="text-center" style="padding: 12px 10px;"><?php echo $item['unit']; ?></td>
+                        <td class="text-right" style="padding: 12px 10px;"><?php echo number_format($item['qty_pcs'], 2); ?></td>
+                        <td class="text-right" style="padding: 12px 10px;"><?php echo number_format($item['qty_kgs'], 2); ?></td>
+                        <td class="text-right" style="padding: 12px 10px;">₹<?php echo number_format($item['rate'], 2); ?></td>
+                        <td class="text-right" style="padding: 12px 10px;"><b>₹<?php echo number_format($item['total'], 2); ?></b></td>
                     </tr>
                     <?php endwhile; endif; ?>
                 </tbody>
+                <tfoot style="background: #fdfdfd; border-top: 2px solid #C9A14A; border-bottom: 2px solid #C9A14A;">
+                    <tr style="font-weight: 800; color: #000; font-size: 14px;">
+                        <td colspan="2" class="text-right" style="padding: 15px 10px;">TOTAL</td>
+                        <td class="text-right" style="padding: 15px 10px;"><?php echo number_format($total_pcs, 2); ?></td>
+                        <td class="text-right" style="padding: 15px 10px;"><?php echo number_format($total_kgs, 2); ?></td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
             </table>
 
-            <div class="totals-container" style="margin-top: 25px;">
-                <div class="total-row">
+            <div class="totals-container" style="margin-top: 20px; display: flex; flex-direction: column; align-items: flex-end;">
+                <div class="total-row" style="padding: 5px 0; font-size: 15px; width: 300px; display: flex; justify-content: space-between;">
                     <span>Total Amount:</span>
                     <span>₹<?php echo number_format($data['sub_total'] ?? $data['amount'] ?? 0, 2); ?></span>
                 </div>
                 <?php if (($data['discount'] ?? 0) > 0): ?>
-                <div class="total-row">
+                <div class="total-row" style="padding: 5px 0; font-size: 15px; width: 300px; display: flex; justify-content: space-between;">
                     <span>Discount:</span>
                     <span>-₹<?php echo number_format($data['discount'], 2); ?></span>
                 </div>
                 <?php endif; ?>
                 <?php if (($data['transport_charge'] ?? 0) > 0): ?>
-                <div class="total-row">
+                <div class="total-row" style="padding: 5px 0; font-size: 15px; width: 300px; display: flex; justify-content: space-between;">
                     <span>Transport:</span>
                     <span>+₹<?php echo number_format($data['transport_charge'], 2); ?></span>
                 </div>
                 <?php endif; ?>
                 
-                <div class="grand-total-row" style="padding: 10px 0;">
-                    <span class="grand-total-label" style="font-size: 17px;">Grand Total:</span>
-                    <span class="grand-total-value" style="font-size: 17px;">₹<?php echo number_format($data['total_amount'] ?? $data['amount'] ?? 0, 2); ?></span>
+                <div class="grand-total-row" style="padding: 15px 0; margin-top: 10px; border-top: 1px solid #eee; width: 350px; display: flex; justify-content: space-between;">
+                    <span class="grand-total-label" style="font-size: 20px; font-weight: 800; color: #C9A14A;">Grand Total:</span>
+                    <span class="grand-total-value" style="font-size: 20px; font-weight: 800; color: #C9A14A;">₹<?php echo number_format($data['total_amount'] ?? $data['amount'] ?? 0, 2); ?></span>
                 </div>
             </div>
 
-            <div class="invoice-footer" style="bottom: 15px;">
-                <div class="thanks-msg">Thank you for your business!</div>
-                <div class="generated-msg">This is a computer generated invoice.</div>
+            <div class="invoice-footer">
+                <div class="thanks-msg" style="font-size: 13px; color: #666;">Thank you for your business!</div>
+                <div class="generated-msg" style="font-size: 11px; color: #aaa;">This is a computer generated invoice.</div>
             </div>
         </div>
     </div>
