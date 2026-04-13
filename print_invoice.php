@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'departments.php'; // Department definitions - safe to commit to git
 require_once 'includes/oceanhub.php';
 check_login();
 
@@ -225,43 +226,79 @@ function convert_to_words($number) {
                 <?php endif; ?>
             </div>
 
+            <?php
+            // Pre-scan items using fresh query to determine which columns have data
+            $total_pcs = 0;
+            $total_kgs = 0;
+            $has_pcs = false;
+            $has_kgs = false;
+            $item_rows = [];
+
+            // Build item query based on type
+            if ($type == 'sales') {
+                $item_q = $conn->query("SELECT oi.*, p.name as prod_name FROM outward_items oi JOIN products p ON oi.product_id = p.id WHERE oi.outward_id = $id");
+            } elseif ($type == 'purchase') {
+                $item_q = $conn->query("SELECT ii.*, p.name as prod_name FROM inward_items ii JOIN products p ON ii.product_id = p.id WHERE ii.inward_id = $id");
+            } else {
+                $item_q = null;
+            }
+
+            if ($item_q): while($row = $item_q->fetch_assoc()):
+                $total_pcs += floatval($row['qty_pcs']);
+                $total_kgs += floatval($row['qty_kgs']);
+                if (floatval($row['qty_pcs']) > 0) $has_pcs = true;
+                if (floatval($row['qty_kgs']) > 0) $has_kgs = true;
+                $item_rows[] = $row;
+            endwhile; endif;
+
+            // Determine description column width dynamically
+            $desc_width = 45;
+            if (!$has_pcs) $desc_width += 10;
+            if (!$has_kgs) $desc_width += 10;
+            ?>
             <table class="accounting-table" style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #f9f9f9; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
-                        <th style="width: 45%; padding: 12px 10px; font-weight: 800;">Item Description</th>
+                        <th style="width: <?php echo $desc_width; ?>%; padding: 12px 10px; font-weight: 800;">Item Description</th>
                         <th class="text-center" style="width: 10%; padding: 12px 10px;">Unit</th>
+                        <?php if ($has_pcs): ?>
                         <th class="text-right" style="width: 10%; padding: 12px 10px;">Pcs</th>
+                        <?php endif; ?>
+                        <?php if ($has_kgs): ?>
                         <th class="text-right" style="width: 10%; padding: 12px 10px;">Kgs</th>
+                        <?php endif; ?>
                         <th class="text-right" style="width: 12%; padding: 12px 10px;">Rate</th>
                         <th class="text-right" style="width: 13%; padding: 12px 10px;">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php 
-                    $total_pcs = 0;
-                    $total_kgs = 0;
-                    if ($items): while($item = $items->fetch_assoc()): 
-                        $total_pcs += $item['qty_pcs'];
-                        $total_kgs += $item['qty_kgs'];
-                    ?>
+                    <?php foreach ($item_rows as $item): ?>
                     <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 12px 10px;">
                             <?php echo $item['prod_name']; ?>
                             <?php if (!empty($item['color'])) echo " (".$item['color'].")"; ?>
                         </td>
                         <td class="text-center" style="padding: 12px 10px;"><?php echo $item['unit']; ?></td>
-                        <td class="text-right" style="padding: 12px 10px;"><?php echo number_format($item['qty_pcs'], 2); ?></td>
-                        <td class="text-right" style="padding: 12px 10px;"><?php echo number_format($item['qty_kgs'], 2); ?></td>
+                        <?php if ($has_pcs): ?>
+                        <td class="text-right" style="padding: 12px 10px;"><?php echo $item['qty_pcs'] > 0 ? number_format($item['qty_pcs'], 2) : '-'; ?></td>
+                        <?php endif; ?>
+                        <?php if ($has_kgs): ?>
+                        <td class="text-right" style="padding: 12px 10px;"><?php echo $item['qty_kgs'] > 0 ? number_format($item['qty_kgs'], 2) : '-'; ?></td>
+                        <?php endif; ?>
                         <td class="text-right" style="padding: 12px 10px;">₹<?php echo number_format($item['rate'], 2); ?></td>
                         <td class="text-right" style="padding: 12px 10px;"><b>₹<?php echo number_format($item['total'], 2); ?></b></td>
                     </tr>
-                    <?php endwhile; endif; ?>
+                    <?php endforeach; ?>
                 </tbody>
                 <tfoot style="background: #fdfdfd; border-top: 2px solid #C9A14A; border-bottom: 2px solid #C9A14A;">
                     <tr style="font-weight: 800; color: #000; font-size: 14px;">
-                        <td colspan="2" class="text-right" style="padding: 15px 10px;">TOTAL</td>
-                        <td class="text-right" style="padding: 15px 10px;"><?php echo number_format($total_pcs, 2); ?></td>
-                        <td class="text-right" style="padding: 15px 10px;"><?php echo number_format($total_kgs, 2); ?></td>
+                        <td colspan="2" class="text-right" style="padding: 15px 10px; color: #C9A14A;">TOTAL</td>
+                        <?php if ($has_pcs): ?>
+                        <td class="text-right" style="padding: 15px 10px;"><?php echo number_format($total_pcs, 2); ?> <small style="font-weight:400; color:#888;">Pcs</small></td>
+                        <?php endif; ?>
+                        <?php if ($has_kgs): ?>
+                        <td class="text-right" style="padding: 15px 10px;"><?php echo number_format($total_kgs, 2); ?> <small style="font-weight:400; color:#888;">Kgs</small></td>
+                        <?php endif; ?>
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>
