@@ -227,82 +227,127 @@ function convert_to_words($number) {
             </div>
 
             <?php
-            // Pre-scan items using fresh query to determine which columns have data
-            $total_pcs = 0;
-            $total_kgs = 0;
-            $has_pcs = false;
-            $has_kgs = false;
+            // Fetch all items fresh
             $item_rows = [];
-
-            // Build item query based on type
+            $total_pcs = 0; $total_kgs = 0; $total_feet = 0;
             if ($type == 'sales') {
                 $item_q = $conn->query("SELECT oi.*, p.name as prod_name FROM outward_items oi JOIN products p ON oi.product_id = p.id WHERE oi.outward_id = $id");
             } elseif ($type == 'purchase') {
                 $item_q = $conn->query("SELECT ii.*, p.name as prod_name FROM inward_items ii JOIN products p ON ii.product_id = p.id WHERE ii.inward_id = $id");
-            } else {
-                $item_q = null;
-            }
-
-            if ($item_q): while($row = $item_q->fetch_assoc()):
-                $total_pcs += floatval($row['qty_pcs']);
-                $total_kgs += floatval($row['qty_kgs']);
-                if (floatval($row['qty_pcs']) > 0) $has_pcs = true;
-                if (floatval($row['qty_kgs']) > 0) $has_kgs = true;
+            } else { $item_q = null; }
+            if ($item_q) while($row = $item_q->fetch_assoc()) {
+                $total_pcs  += floatval($row['qty_pcs']);
+                $total_kgs  += floatval($row['qty_kgs']);
+                $total_feet += floatval($row['feet'] ?? 0);
                 $item_rows[] = $row;
-            endwhile; endif;
-
-            // Determine description column width dynamically
-            $desc_width = 45;
-            if (!$has_pcs) $desc_width += 10;
-            if (!$has_kgs) $desc_width += 10;
+            }
+            $dept_id = intval($data['dept_id'] ?? 0);
             ?>
-            <table class="accounting-table" style="width: 100%; border-collapse: collapse;">
+
+            <?php if ($dept_id == 3): ?>
+            <!-- ANODIZING SECTION: Product | Foot | PCS | RFT | Rate | Amount -->
+            <table class="accounting-table" style="width:100%;border-collapse:collapse;">
                 <thead>
-                    <tr style="background: #f9f9f9; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
-                        <th style="width: <?php echo $desc_width; ?>%; padding: 12px 10px; font-weight: 800;">Item Description</th>
-                        <th class="text-center" style="width: 10%; padding: 12px 10px;">Unit</th>
-                        <?php if ($has_pcs): ?>
-                        <th class="text-right" style="width: 10%; padding: 12px 10px;">Pcs</th>
-                        <?php endif; ?>
-                        <?php if ($has_kgs): ?>
-                        <th class="text-right" style="width: 10%; padding: 12px 10px;">Kgs</th>
-                        <?php endif; ?>
-                        <th class="text-right" style="width: 12%; padding: 12px 10px;">Rate</th>
-                        <th class="text-right" style="width: 13%; padding: 12px 10px;">Amount</th>
+                    <tr style="background:#f9f9f9;border-top:1px solid #ddd;border-bottom:1px solid #ddd;">
+                        <th style="width:38%;padding:12px 10px;font-weight:800;">Item Description</th>
+                        <th class="text-right" style="width:10%;padding:12px 10px;">Foot</th>
+                        <th class="text-right" style="width:10%;padding:12px 10px;">PCS</th>
+                        <th class="text-right" style="width:10%;padding:12px 10px;">RFT</th>
+                        <th class="text-right" style="width:16%;padding:12px 10px;">Rate</th>
+                        <th class="text-right" style="width:16%;padding:12px 10px;">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($item_rows as $item): ?>
-                    <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 12px 10px;">
-                            <?php echo $item['prod_name']; ?>
-                            <?php if (!empty($item['color'])) echo " (".$item['color'].")"; ?>
-                        </td>
-                        <td class="text-center" style="padding: 12px 10px;"><?php echo $item['unit']; ?></td>
-                        <?php if ($has_pcs): ?>
-                        <td class="text-right" style="padding: 12px 10px;"><?php echo $item['qty_pcs'] > 0 ? number_format($item['qty_pcs'], 2) : '-'; ?></td>
-                        <?php endif; ?>
-                        <?php if ($has_kgs): ?>
-                        <td class="text-right" style="padding: 12px 10px;"><?php echo $item['qty_kgs'] > 0 ? number_format($item['qty_kgs'], 2) : '-'; ?></td>
-                        <?php endif; ?>
-                        <td class="text-right" style="padding: 12px 10px;">₹<?php echo number_format($item['rate'], 2); ?></td>
-                        <td class="text-right" style="padding: 12px 10px;"><b>₹<?php echo number_format($item['total'], 2); ?></b></td>
+                    <?php foreach($item_rows as $item): ?>
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:12px 10px;"><?php echo $item['prod_name']; ?></td>
+                        <td class="text-right" style="padding:12px 10px;"><?php echo number_format($item['feet'] ?? 0, 3); ?></td>
+                        <td class="text-right" style="padding:12px 10px;"><?php echo number_format($item['qty_pcs'], 2); ?></td>
+                        <td class="text-right" style="padding:12px 10px;"><?php echo number_format($item['qty_kgs'], 3); ?></td>
+                        <td class="text-right" style="padding:12px 10px;">₹<?php echo number_format($item['rate'], 2); ?></td>
+                        <td class="text-right" style="padding:12px 10px;"><b>₹<?php echo number_format($item['total'], 2); ?></b></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
-                <tfoot style="background: #fdfdfd; border-top: 2px solid #C9A14A; border-bottom: 2px solid #C9A14A;">
-                    <tr style="font-weight: 800; color: #000; font-size: 14px;">
-                        <td colspan="2" class="text-right" style="padding: 15px 10px; color: #C9A14A;">TOTAL</td>
-                        <?php if ($has_pcs): ?>
-                        <td class="text-right" style="padding: 15px 10px;"><?php echo number_format($total_pcs, 2); ?> <small style="font-weight:400; color:#888;">Pcs</small></td>
-                        <?php endif; ?>
-                        <?php if ($has_kgs): ?>
-                        <td class="text-right" style="padding: 15px 10px;"><?php echo number_format($total_kgs, 2); ?> <small style="font-weight:400; color:#888;">Kgs</small></td>
-                        <?php endif; ?>
+                <tfoot style="background:#fdfdfd;border-top:2px solid #C9A14A;border-bottom:2px solid #C9A14A;">
+                    <tr style="font-weight:800;font-size:14px;">
+                        <td class="text-right" style="padding:15px 10px;color:#C9A14A;">TOTAL</td>
+                        <td class="text-right" style="padding:15px 10px;"><?php echo number_format($total_feet,3); ?> <small style="font-weight:400;color:#888;">Ft</small></td>
+                        <td class="text-right" style="padding:15px 10px;"><?php echo number_format($total_pcs,2); ?> <small style="font-weight:400;color:#888;">Pcs</small></td>
+                        <td class="text-right" style="padding:15px 10px;"><?php echo number_format($total_kgs,3); ?> <small style="font-weight:400;color:#888;">RFT</small></td>
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>
             </table>
+
+            <?php elseif ($dept_id == 2): ?>
+            <!-- POWDER COATING: Product | Color | Weight/Kg | Rate | Amount -->
+            <table class="accounting-table" style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#f9f9f9;border-top:1px solid #ddd;border-bottom:1px solid #ddd;">
+                        <th style="width:38%;padding:12px 10px;font-weight:800;">Item Description</th>
+                        <th style="width:14%;padding:12px 10px;">Color</th>
+                        <th class="text-right" style="width:12%;padding:12px 10px;">Weight/Kg</th>
+                        <th class="text-right" style="width:18%;padding:12px 10px;">Rate</th>
+                        <th class="text-right" style="width:18%;padding:12px 10px;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach($item_rows as $item): ?>
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:12px 10px;"><?php echo $item['prod_name']; ?></td>
+                        <td style="padding:12px 10px;"><?php echo $item['color'] ?? '-'; ?></td>
+                        <td class="text-right" style="padding:12px 10px;"><?php echo number_format($item['qty_kgs'], 2); ?></td>
+                        <td class="text-right" style="padding:12px 10px;">₹<?php echo number_format($item['rate'], 2); ?></td>
+                        <td class="text-right" style="padding:12px 10px;"><b>₹<?php echo number_format($item['total'], 2); ?></b></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+                <tfoot style="background:#fdfdfd;border-top:2px solid #C9A14A;border-bottom:2px solid #C9A14A;">
+                    <tr style="font-weight:800;font-size:14px;">
+                        <td colspan="2" class="text-right" style="padding:15px 10px;color:#C9A14A;">TOTAL</td>
+                        <td class="text-right" style="padding:15px 10px;"><?php echo number_format($total_kgs,2); ?> <small style="font-weight:400;color:#888;">Kgs</small></td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <?php else: ?>
+            <!-- ALUMINIUM SECTION (default): Product | Unit | Qty/Pcs | Weight/Kg | Rate | Amount -->
+            <table class="accounting-table" style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#f9f9f9;border-top:1px solid #ddd;border-bottom:1px solid #ddd;">
+                        <th style="width:38%;padding:12px 10px;font-weight:800;">Item Description</th>
+                        <th class="text-center" style="width:10%;padding:12px 10px;">Unit</th>
+                        <th class="text-right" style="width:10%;padding:12px 10px;">Qty/Pcs</th>
+                        <th class="text-right" style="width:12%;padding:12px 10px;">Weight/Kg</th>
+                        <th class="text-right" style="width:15%;padding:12px 10px;">Rate</th>
+                        <th class="text-right" style="width:15%;padding:12px 10px;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach($item_rows as $item): ?>
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:12px 10px;"><?php echo $item['prod_name']; ?></td>
+                        <td class="text-center" style="padding:12px 10px;"><?php echo $item['unit']; ?></td>
+                        <td class="text-right" style="padding:12px 10px;"><?php echo number_format($item['qty_pcs'], 2); ?></td>
+                        <td class="text-right" style="padding:12px 10px;"><?php echo number_format($item['qty_kgs'], 3); ?></td>
+                        <td class="text-right" style="padding:12px 10px;">₹<?php echo number_format($item['rate'], 2); ?></td>
+                        <td class="text-right" style="padding:12px 10px;"><b>₹<?php echo number_format($item['total'], 2); ?></b></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+                <tfoot style="background:#fdfdfd;border-top:2px solid #C9A14A;border-bottom:2px solid #C9A14A;">
+                    <tr style="font-weight:800;font-size:14px;">
+                        <td colspan="2" class="text-right" style="padding:15px 10px;color:#C9A14A;">TOTAL</td>
+                        <td class="text-right" style="padding:15px 10px;"><?php echo number_format($total_pcs,2); ?> <small style="font-weight:400;color:#888;">Pcs</small></td>
+                        <td class="text-right" style="padding:15px 10px;"><?php echo number_format($total_kgs,3); ?> <small style="font-weight:400;color:#888;">Kgs</small></td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+            <?php endif; ?>
+
 
             <div class="totals-container" style="margin-top: 20px; display: flex; flex-direction: column; align-items: flex-end;">
                 <div class="total-row" style="padding: 5px 0; font-size: 15px; width: 300px; display: flex; justify-content: space-between;">
@@ -328,7 +373,14 @@ function convert_to_words($number) {
                 </div>
             </div>
 
-            <div class="invoice-footer">
+            <?php if (!empty($data['narration'])): ?>
+            <div style="margin-top: 30px; padding: 15px; border-left: 3px solid #C9A14A; background: #fafafa;">
+                <div style="font-size: 12px; font-weight: 800; color: #999; text-transform: uppercase; margin-bottom: 5px;">Narration / Notes</div>
+                <div style="font-size: 14px; color: #444; line-height: 1.6;"><?php echo nl2br(htmlspecialchars($data['narration'])); ?></div>
+            </div>
+            <?php endif; ?>
+
+            <div class="invoice-footer" style="margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
                 <div class="thanks-msg" style="font-size: 13px; color: #666;">Thank you for your business!</div>
                 <div class="generated-msg" style="font-size: 11px; color: #aaa;">This is a computer generated invoice.</div>
             </div>
