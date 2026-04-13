@@ -2,6 +2,10 @@
 $page_title = 'Party Management';
 require_once 'includes/header.php';
 
+if (!has_permission('parties', 'view')) {
+    die("Access denied. You don't have permission to view this module.");
+}
+
 $mode = isset($_GET['mode']) ? $_GET['mode'] : 'list';
 $msg = '';
 
@@ -10,6 +14,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mode = $_POST['mode'];
 
     if ($mode === 'add' || $mode === 'edit') {
+        // Enforce Add/Edit Permission
+        if ($mode === 'add' && !has_permission('parties', 'add')) die("Unauthorized action.");
+        if ($mode === 'edit' && !has_permission('parties', 'edit')) die("Unauthorized action.");
+
         $name = trim($_POST['name']);
         $type = $_POST['type'];
         $mobile = trim($_POST['mobile']);
@@ -54,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if (isset($_GET['delete'])) {
+    if (!has_permission('parties', 'delete')) die("Unauthorized action.");
     $id = (int)$_GET['delete'];
     $conn->query("DELETE FROM parties WHERE id=$id");
     redirect('party_crud.php?deleted=1');
@@ -72,9 +81,11 @@ if ($mode === 'edit' && isset($_GET['id'])) {
     <div class="col-12 d-flex justify-content-between align-items-center">
         <h4 class="mb-0 text-theme">Manage Customers & Suppliers</h4>
         <?php if ($mode === 'list'): ?>
+            <?php if (has_permission('parties', 'add')): ?>
             <a href="party_crud.php?mode=add" class="btn btn-gold">
                 <i class="fa fa-plus me-1"></i> Add New Party
             </a>
+            <?php endif; ?>
         <?php else: ?>
             <a href="party_crud.php" class="btn btn-outline-secondary">
                 <i class="fa fa-arrow-left me-1"></i> Back to List
@@ -121,10 +132,12 @@ if ($mode === 'edit' && isset($_GET['id'])) {
                             <td class="fw-bold"><?php echo format_currency($row['opening_balance']); ?></td>
                             <td>
                                 <div class="btn-group btn-group-sm">
+                                    <?php if (has_permission('parties', 'edit')): ?>
                                     <a href="party_crud.php?mode=edit&id=<?php echo $row['id']; ?>" class="btn btn-outline-gold" title="Edit">
                                         <i class="fa fa-edit"></i>
                                     </a>
-                                    <?php if (is_admin()): ?>
+                                    <?php endif; ?>
+                                    <?php if (has_permission('parties', 'delete')): ?>
                                     <a href="party_crud.php?delete=<?php echo $row['id']; ?>" class="btn btn-outline-danger delete-btn" title="Delete">
                                         <i class="fa fa-trash"></i>
                                     </a>

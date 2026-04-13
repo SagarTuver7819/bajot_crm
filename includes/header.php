@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'includes/auth.php';
 check_login();
 
 $page_title = isset($page_title) ? $page_title : 'Dashboard';
