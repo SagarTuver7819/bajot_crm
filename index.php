@@ -18,23 +18,43 @@ $total_expenses = $conn->query("SELECT SUM(amount) FROM expenses WHERE dept_id =
 $profit = $total_sales - $total_purchase - $total_expenses;
 
 // Calculate Total Receivables (Levana) and Total Payables (Apvana)
-$outstandings = $conn->query("SELECT 
-    SUM(CASE WHEN balance > 0 THEN balance ELSE 0 END) as receivables,
-    SUM(CASE WHEN balance < 0 THEN ABS(balance) ELSE 0 END) as payables
-FROM (
-    SELECT p.id,
-        (COALESCE(p.opening_balance, 0) + 
-         COALESCE((SELECT SUM(total_amount) FROM outwards WHERE party_id = p.id), 0) + 
-         COALESCE((SELECT SUM(amount) FROM vouchers WHERE party_id = p.id AND type IN ('payment', 'expense')), 0) + 
-         COALESCE((SELECT SUM(amount) FROM kasars WHERE party_id = p.id AND type = 'received'), 0) - 
-         COALESCE((SELECT SUM(total_amount) FROM inwards WHERE party_id = p.id), 0) - 
-         COALESCE((SELECT SUM(amount) FROM vouchers WHERE party_id = p.id AND type = 'receipt'), 0) - 
-         COALESCE((SELECT SUM(amount) FROM kasars WHERE party_id = p.id AND type = 'allowed'), 0)) as balance
-    FROM parties p
-) as party_balances")->fetch_assoc();
+// Convention: Customer balance = Opening + Sales - Receipts - Kasar_allowed (positive = we receive)
+//             Supplier balance = Opening + Purchases - Payments - Kasar_received (positive = we owe)
 
-$total_receivables = $outstandings['receivables'] ?? 0;
-$total_payables = $outstandings['payables'] ?? 0;
+$total_receivables = 0;
+$total_payables    = 0;
+
+$parties_res = $conn->query("SELECT id, type, opening_balance FROM parties");
+while ($party = $parties_res->fetch_assoc()) {
+    $pid  = (int)$party['id'];
+    $ob   = floatval($party['opening_balance']);
+    $type = $party['type'];
+
+    $sales     = floatval($conn->query("SELECT COALESCE(SUM(total_amount),0) FROM outwards WHERE party_id=$pid")->fetch_row()[0]);
+    $purchases = floatval($conn->query("SELECT COALESCE(SUM(total_amount),0) FROM inwards WHERE party_id=$pid")->fetch_row()[0]);
+    $receipts  = floatval($conn->query("SELECT COALESCE(SUM(amount),0) FROM vouchers WHERE party_id=$pid AND type='receipt'")->fetch_row()[0]);
+    $payments  = floatval($conn->query("SELECT COALESCE(SUM(amount),0) FROM vouchers WHERE party_id=$pid AND type='payment'")->fetch_row()[0]);
+    $kasar_allowed   = floatval($conn->query("SELECT COALESCE(SUM(amount),0) FROM kasars WHERE party_id=$pid AND type='allowed'")->fetch_row()[0]);
+    $kasar_received  = floatval($conn->query("SELECT COALESCE(SUM(amount),0) FROM kasars WHERE party_id=$pid AND type='received'")->fetch_row()[0]);
+
+    if ($type === 'customer') {
+        // Levana: Sales increase what customer owes us
+        $bal = $ob + $sales - $receipts - $kasar_allowed;
+        if ($bal > 0) $total_receivables += $bal;
+    } elseif ($type === 'supplier') {
+        // Apvana: Purchases increase what we owe supplier
+        $bal = $ob + $purchases - $payments - $kasar_received;
+        if ($bal > 0) $total_payables += $bal;
+    } elseif ($type === 'both') {
+        // Both: treat receivable and payable portions separately
+        $recv_bal = $ob > 0 ? $ob : 0;
+        $pay_bal  = $ob < 0 ? abs($ob) : 0;
+        $recv_bal = $recv_bal + $sales - $receipts - $kasar_allowed;
+        $pay_bal  = $pay_bal + $purchases - $payments - $kasar_received;
+        if ($recv_bal > 0) $total_receivables += $recv_bal;
+        if ($pay_bal  > 0) $total_payables    += $pay_bal;
+    }
+}
 
 // Dept Breakdown
 $sales_by_dept = [];
