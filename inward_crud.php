@@ -2,11 +2,21 @@
 $page_title = 'Inward (Purchase)';
 require_once 'includes/header.php';
 
+if (!has_permission('inward', 'view')) {
+    die("Access denied. You don't have permission to view this module.");
+}
+
 $mode = isset($_GET['mode']) ? $_GET['mode'] : 'list';
 $msg = '';
 
 // Handle Purchase Entry
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_inward'])) {
+    $edit_id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+    
+    // Enforce Add/Edit Permission
+    if ($edit_id == 0 && !has_permission('inward', 'add')) die("Unauthorized action.");
+    if ($edit_id > 0 && !has_permission('inward', 'edit')) die("Unauthorized action.");
+
     $party_id = (int)$_POST['party_id'];
     $date = trim($_POST['date']);
     $bill_no = trim($_POST['bill_no']);
@@ -23,8 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_inward'])) {
     $conn->begin_transaction();
     
     try {
-        $edit_id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
-        
         if ($edit_id > 0) {
             // Recover Old Stock & Delete Old Items (Subtract because Inward increased stock)
             $old_items = $conn->query("SELECT * FROM inward_items WHERE inward_id=$edit_id");
@@ -78,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_inward'])) {
 }
 
 if (isset($_GET['delete'])) {
+    if (!has_permission('inward', 'delete')) die("Unauthorized action.");
     $id = (int)$_GET['delete'];
     // Reduct stock before deleting? PRD says stock increase on inward. So decrease on delete.
     $items = $conn->query("SELECT * FROM inward_items WHERE inward_id=$id");
@@ -93,9 +102,11 @@ if (isset($_GET['delete'])) {
     <div class="col-12 d-flex justify-content-between align-items-center">
         <h4 class="mb-0 text-theme">Purchase Entries (Inward)</h4>
         <?php if ($mode === 'list'): ?>
+            <?php if (has_permission('inward', 'add')): ?>
             <a href="inward_crud.php?mode=add" class="btn btn-gold">
                 <i class="fa fa-plus me-1"></i> New Purchase
             </a>
+            <?php endif; ?>
         <?php else: ?>
             <a href="inward_crud.php" class="btn btn-outline-secondary">
                 <i class="fa fa-arrow-left me-1"></i> Back to List
@@ -155,13 +166,15 @@ if (isset($_GET['delete'])) {
                                     <a href="print_invoice.php?type=purchase&id=<?php echo $row['id']; ?>" class="btn btn-outline-warning" title="Print" target="_blank">
                                         <i class="fa fa-print"></i>
                                     </a>
+                                    <?php if (has_permission('inward', 'edit')): ?>
                                     <a href="inward_crud.php?mode=edit&id=<?php echo $row['id']; ?>" class="btn btn-outline-gold" title="Edit">
                                         <i class="fa fa-edit"></i>
                                     </a>
+                                    <?php endif; ?>
                                     <a href="inward_crud.php?mode=view&id=<?php echo $row['id']; ?>" class="btn btn-outline-info" title="View">
                                         <i class="fa fa-eye"></i>
                                     </a>
-                                    <?php if (is_admin()): ?>
+                                    <?php if (has_permission('inward', 'delete')): ?>
                                     <a href="inward_crud.php?delete=<?php echo $row['id']; ?>" class="btn btn-outline-danger delete-btn" title="Delete">
                                         <i class="fa fa-trash"></i>
                                     </a>

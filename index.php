@@ -2,6 +2,14 @@
 $page_title = 'Dashboard';
 require_once 'includes/header.php';
 
+if (!has_permission('dashboard', 'view')) {
+    // If they can't view dashboard, redirect to another module they CAN view
+    // Or just show a simple access denied.
+    echo "<div class='container p-5 text-center'><h3>Welcome to Kaizer CRM</h3><p>Select a module from the sidebar to begin.</p></div>";
+    include 'includes/footer.php';
+    exit();
+}
+
 // Fetch Totals
 $total_sales = $conn->query("SELECT SUM(total_amount) FROM outwards")->fetch_row()[0] ?? 0;
 $total_purchase = $conn->query("SELECT SUM(total_amount) FROM inwards")->fetch_row()[0] ?? 0;
