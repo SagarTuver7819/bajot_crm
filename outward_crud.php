@@ -404,6 +404,33 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                             </tr>
                             <?php endif; ?>
                         </tbody>
+                        <tfoot>
+                            <tr id="columnTotalsRow" style="border-top: 2px solid var(--gold); font-weight: 700; font-size: 13px; background: rgba(201,161,74,0.05);">
+                                <?php if ($_SESSION['dept_id'] == 1): ?>
+                                    <td class="text-end" colspan="2" style="color: var(--gold); padding: 10px;">TOTAL</td>
+                                    <td style="padding: 10px;"><span id="totalPcs" class="fw-bold">0.00</span> <small class="text-muted">Pcs</small></td>
+                                    <td style="padding: 10px;"><span id="totalKgs" class="fw-bold">0.00</span> <small class="text-muted">Kgs</small></td>
+                                    <td colspan="3"></td>
+                                <?php elseif ($_SESSION['dept_id'] == 2): ?>
+                                    <!-- Visible cols: Product(1), Color(2), Weight/Kg(3), Rate(4), Total(5), Del(6) -->
+                                    <td class="text-end" colspan="2" style="color: var(--gold); padding: 10px;">TOTAL</td>
+                                    <td style="padding: 10px;"><span id="totalKgs" class="fw-bold">0.00</span> <small class="text-muted">Kgs</small></td>
+                                    <td colspan="3"></td>
+                                <?php elseif ($_SESSION['dept_id'] == 3): ?>
+                                    <!-- Visible cols: Product(1), Foot(2), PCS(3), RFT(4), Rate(5), Total(6), Del(7) -->
+                                    <td class="text-end" colspan="1" style="color: var(--gold); padding: 10px;">TOTAL</td>
+                                    <td style="padding: 10px;"><span id="totalFeet" class="fw-bold">0.000</span> <small class="text-muted">Ft</small></td>
+                                    <td style="padding: 10px;"><span id="totalPcs" class="fw-bold">0.00</span> <small class="text-muted">Pcs</small></td>
+                                    <td style="padding: 10px;"><span id="totalKgs" class="fw-bold">0.000</span> <small class="text-muted">RFT</small></td>
+                                    <td colspan="3"></td>
+                                <?php else: ?>
+                                    <td class="text-end" colspan="2" style="color: var(--gold); padding: 10px;">TOTAL</td>
+                                    <td style="padding: 10px;"><span id="totalPcs" class="fw-bold">0.00</span> <small class="text-muted">Pcs</small></td>
+                                    <td style="padding: 10px;"><span id="totalKgs" class="fw-bold">0.00</span> <small class="text-muted">Kgs</small></td>
+                                    <td colspan="3"></td>
+                                <?php endif; ?>
+                            </tr>
+                        </tfoot>
                     </table>
                     <?php if ($mode !== 'view'): ?>
                         <button type="button" class="btn btn-sm btn-outline-gold" id="addRow"><i class="fa fa-plus me-1"></i> Add Item</button>
@@ -512,8 +539,21 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
             const discountPercent = parseFloat(document.getElementById('discountPercentInput').value) || 0;
             const discountAmount = (sub * discountPercent) / 100;
             const grand = (sub - discountAmount) + transport;
-            
             document.getElementById('lblGrandTotal').innerText = '₹' + grand.toFixed(2);
+
+            // Update column-wise totals
+            let totalPcs = 0, totalKgs = 0, totalFeet = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const pcsEl = row.querySelector('.qty-pcs-input');
+                const kgsEl = row.querySelector('.qty-kgs-input');
+                const feetEl = row.querySelector('.feet-input');
+                if (pcsEl) totalPcs += parseFloat(pcsEl.value) || 0;
+                if (kgsEl) totalKgs += parseFloat(kgsEl.value) || 0;
+                if (feetEl) totalFeet += parseFloat(feetEl.value) || 0;
+            });
+            if (document.getElementById('totalPcs')) document.getElementById('totalPcs').innerText = totalPcs.toFixed(2);
+            if (document.getElementById('totalKgs')) document.getElementById('totalKgs').innerText = totalKgs.toFixed(3);
+            if (document.getElementById('totalFeet')) document.getElementById('totalFeet').innerText = totalFeet.toFixed(3);
         }
 
         document.getElementById('transportChargeInput').addEventListener('input', calculateGrand);
