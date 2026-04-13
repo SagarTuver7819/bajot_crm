@@ -49,22 +49,23 @@ while ($row = $result->fetch_assoc()) {
     $net_balance = $adj_opening + $sales + $payments_made + $kasar_rec - $purchases - $receipts_taken - $kasar_all;
     $row['balance'] = $net_balance; // For Consolidated view
 
-    // Receivable Part Calculation
+    // Receivable Part Calculation (Debit perspective)
     $rec_part = 0;
     if ($row['party_type'] == 'customer') {
         $rec_part = $net_balance;
     } elseif ($row['party_type'] == 'both') {
-        // For 'Both', we use the standard opening if > 0 as receivable part
-        $rec_part = ($opening > 0 ? $opening : 0) + $sales + $kasar_rec - $receipts_taken;
+        // Receivable Part = Positive opening + Sales + Kasar Received (reduces payable, but we treat it as debit increase?) 
+        // No, standard: Rec = Op(Dr) + Sales - Receipts - KasarAllowed
+        $rec_part = ($opening > 0 ? $opening : 0) + $sales - $receipts_taken - $kasar_all;
     }
     
-    // Payable Part Calculation
+    // Payable Part Calculation (Credit perspective)
     $pay_part = 0;
     if ($row['party_type'] == 'supplier') {
         $pay_part = -$net_balance;
     } elseif ($row['party_type'] == 'both') {
-        // For 'Both', we use the standard opening if < 0 as payable part
-        $pay_part = ($opening < 0 ? abs($opening) : 0) + $purchases + $kasar_all - $payments_made;
+        // Pay Part = Negative opening + Purchases - Payments - KasarReceived
+        $pay_part = ($opening < 0 ? abs($opening) : 0) + $purchases - $payments_made - $kasar_rec;
     }
     // summary calculations for the Cards (Consolidated View)
     if ($net_balance > 0.01) {
@@ -175,9 +176,9 @@ while ($row = $result->fetch_assoc()) {
                 <thead>
                     <?php if ($report_type == 'all'): ?>
                     <tr>
-                        <th style="width: 40%;">Party Name</th>
+                        <th style="width: 30%;">Party Name</th>
                         <th>Type</th>
-                        <th class="no-print">Mobile</th>
+                        <th class="text-end">Opening</th>
                         <th class="text-end">Debit (Dr)</th>
                         <th class="text-end">Credit (Cr)</th>
                         <th class="text-center no-print">Action</th>
@@ -210,7 +211,7 @@ while ($row = $result->fetch_assoc()) {
                                 <?php echo ucfirst($party['party_type']); ?>
                             </span>
                         </td>
-                        <td class="no-print"><?php echo $party['mobile'] ?: '-'; ?></td>
+                        <td class="text-end"><?php echo number_format(abs($opening), 2); ?> <?php echo $opening >= 0 ? 'Dr' : 'Cr'; ?></td>
                         <td class="text-end">
                             <?php if($bal > 0.01): ?>
                                 <span class="fw-bold text-success_dr"><?php echo number_format($bal, 2); ?></span>

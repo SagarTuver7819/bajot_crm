@@ -97,114 +97,82 @@ function convert_to_words($number) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Print | Kaizer CRM</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 0; padding: 20px; background-color: #f8f9fa; }
-        .invoice-box { max-width: 800px; margin: auto; padding: 0; background: #fff; font-size: 13px; line-height: 20px; color: #000; }
-        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #C9A14A; padding-bottom: 20px; margin-bottom: 20px; }
-        .header h1 { color: #C9A14A; margin: 0; font-size: 28px; }
-        .details { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .details div { width: 45%; }
-        table { width: 100%; line-height: inherit; text-align: left; border-collapse: collapse; }
-        table th { background: #f9f9f9; border-bottom: 1px solid #ddd; padding: 10px; font-weight: bold; }
-        table td { padding: 10px; border-bottom: 1px solid #eee; }
-        .total-box { margin-top: 20px; text-align: right; }
-        .total-box table { width: auto; margin-left: auto; }
-        .total-box td { border-bottom: none; padding: 5px 10px; }
-        .grand-total { font-weight: bold; color: #000; font-size: 18px; border-top: 2px solid #000; }
-        .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .text-left { text-align: left; }
-        .fw-bold { font-weight: bold; }
-        .border-bottom-dark { border-bottom: 2px solid #000; }
-        .mt-3 { margin-top: 15px; }
-        .mb-0 { margin-bottom: 0px; }
-        .d-flex { display: flex; }
-        .justify-content-between { justify-content: space-between; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #333; margin: 0; padding: 40px; background-color: #f5f5f5; }
+        .invoice-box { max-width: 850px; margin: auto; padding: 50px; background: #fff; box-shadow: 0 0 20px rgba(0,0,0,0.05); min-height: 1000px; position: relative; }
         
+        /* Header Layout */
+        .flex-container { display: flex; justify-content: space-between; align-items: flex-start; }
+        .logo-section { width: 50%; }
+        .title-section { width: 50%; text-align: right; }
+        
+        .logo-section img { height: 90px; margin-bottom: 20px; }
+        .logo-section .company-title { font-size: 32px; font-weight: 800; color: #C9A14A; margin-bottom: 10px; }
+        
+        .estimate-text { font-size: 24px; font-weight: 800; color: #555; letter-spacing: 2px; margin-bottom: 15px; }
+        .bill-info { font-size: 14px; line-height: 1.8; color: #444; }
+        .bill-info b { font-weight: 700; color: #000; }
+        
+        .company-address { font-size: 14px; color: #666; width: 80%; line-height: 1.5; margin-bottom: 30px; }
+        
+        .gold-line { border-top: 2.5px solid #C9A14A; margin: 30px 0; opacity: 0.7; }
+        
+        .billed-to-label { font-size: 14px; font-weight: 800; color: #000; margin-bottom: 8px; }
+        .billed-to-content { font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 40px; }
+        .billed-to-name { font-size: 17px; font-weight: 800; color: #000; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        
+        /* Table Styling */
+        .accounting-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .accounting-table thead th { background-color: #f9f9f9; padding: 12px 10px; text-align: left; font-size: 14px; font-weight: 800; color: #444; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+        .accounting-table tbody td { padding: 15px 10px; font-size: 14px; color: #555; border-bottom: 1px solid #f1f1f1; }
+        
+        .text-right { text-align: right !important; }
+        .text-center { text-align: center !important; }
+        
+        /* Totals Section */
+        .totals-container { margin-top: 40px; display: flex; flex-direction: column; align-items: flex-end; }
+        .total-row { display: flex; justify-content: space-between; width: 280px; padding: 6px 0; font-size: 14px; color: #666; }
+        .grand-total-row { display: flex; justify-content: space-between; width: 320px; padding: 15px 0; margin-top: 10px; border-top: 1px solid #eee; }
+        .grand-total-label { font-size: 19px; font-weight: 800; color: #C9A14A; }
+        .grand-total-value { font-size: 19px; font-weight: 800; color: #C9A14A; }
+        
+        /* Footer */
+        .invoice-footer { position: absolute; bottom: 50px; left: 0; right: 0; text-align: center; }
+        .thanks-msg { font-size: 12px; color: #aaa; margin-bottom: 5px; }
+        .generated-msg { font-size: 11px; color: #ccc; }
+        
+        .btn-toolbar { margin: 0 auto 30px auto; max-width: 850px; display: flex; justify-content: center; gap: 15px; padding: 15px; background: rgba(255,255,255,0.9); backdrop-filter: blur(8px); border-radius: 12px; border: 1px solid #e0e0e0; position: sticky; top: 20px; z-index: 1000; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+        .btn-toolbar button { padding: 10px 20px; border: none; cursor: pointer; border-radius: 8px; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; color: white; }
+        .btn-download { background-color: #007bff; }
+        .btn-print { background-color: #C9A14A; }
+
         @media print {
-            @page { size: A4 portrait; margin: 5mm; }
+            @page { 
+                size: A4 portrait; 
+                margin: 0; 
+            }
             body { padding: 0; background: none; }
             .no-print { display: none !important; }
             .invoice-box { 
                 box-shadow: none; 
-                border: 2px solid #000; 
-                width: 100%; 
-                max-width: 100%; 
-                height: 140mm; /* Target half A4 height */
+                border: none; 
+                padding: 10mm; 
+                width: 190mm; /* A4 width minus margins */
+                height: 138mm; /* Slightly less than half of 297mm A4 height */
+                max-height: 138mm;
                 overflow: hidden;
-                margin: 0; 
+                margin: 0 auto;
+                position: relative;
             }
+            .invoice-footer { 
+                position: absolute; 
+                bottom: 10mm; 
+                left: 0; 
+                right: 0; 
+                text-align: center; 
+            }
+            .accounting-table { margin-top: 10px; }
+            .totals-container { margin-top: 20px; }
         }
-
-        .m-0 { margin: 0; }
-        .p-2 { padding: 8px; }
-        .border-all { border: 2px solid #000; }
-        .border-top-none { border-top: none; }
-        .border-right-dark { border-right: 2px solid #000; }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .fw-bold { font-weight: bold; }
-        .d-flex { display: flex; }
-        .justify-content-between { justify-content: space-between; }
-        
-        table { width: 100%; border-collapse: collapse; margin: 0; }
-        table th, table td { border-right: 2px solid #000; padding: 5px 8px; font-size: 13px; }
-        table th { border-bottom: 2px solid #000; background: #fff; }
-        table tr td:last-child, table tr th:last-child { border-right: none; }
-        .small-text { font-size: 12px; }
-
-        .btn-toolbar {
-            margin: 0 auto 30px auto;
-            max-width: 800px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            padding: 15px;
-            background: rgba(255,255,255,0.9);
-            backdrop-filter: blur(8px);
-            border-radius: 12px;
-            border: 1px solid #e0e0e0;
-            position: sticky;
-            top: 20px;
-            z-index: 1000;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-        }
-        .btn-toolbar button, .btn-toolbar a {
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .btn-toolbar button:hover, .btn-toolbar a:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            filter: brightness(1.1);
-        }
-        .btn-toolbar button:active {
-            transform: translateY(0);
-        }
-        .btn-download { background-color: #007bff; }
-        .btn-print { background-color: #C9A14A; }
-        .btn-whatsapp { background-color: #075E54; }
-        
-        .sending-spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid #ffffff;
-            border-top: 2px solid transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -217,193 +185,119 @@ function convert_to_words($number) {
             <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
             PRINT NOW
         </button>
-        <?php if (!empty($wa_phone) && $oceanhub_ready): ?>
-            <button id="btn-send-pdf" onclick="sendPdfToWhatsApp(this)" class="btn-whatsapp">
-                <svg id="wa-icon" style="width: 18px; height: 18px;" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .018 5.393 0 12.03c0 2.122.554 4.197 1.604 6.04L0 24l6.101-1.6c1.785.973 3.799 1.488 5.845 1.489h.005c6.634 0 12.03-5.394 12.033-12.033a11.812 11.812 0 00-3.46-8.508z"/></svg>
-                <div id="wa-spinner" class="sending-spinner" style="display: none;"></div>
-                SEND ON WHATSAPP
-            </button>
-        <?php endif; ?>
     </div>
-    
-    <div id="invoice-content" style="background: #fff;">
-        <div class="invoice-box" style="border: 2px solid #000; padding: 0; max-width: 850px;">
-            <!-- Header Section -->
-            <div class="text-center p-2" style="border-bottom: 2px solid #000;">
-                <h1 style="color: #6b4e1a; margin: 0; letter-spacing: 2px; font-size: 28px;"><?php echo strtoupper($s['company_name']); ?></h1>
-                <p class="m-0 small-text"><?php echo $s['company_address']; ?></p>
-            </div>
 
-            <div class="d-flex justify-content-between p-2" style="border-bottom: 2px solid #000;">
-                <div class="fw-bold">DEBIT MEMO</div>
-                <div class="text-center">
-                    <h3 style="margin: 0; text-decoration: underline; font-weight: 800;"><?php echo $title; ?></h3>
+    <div id="invoice-content">
+        <div class="invoice-box">
+            <div class="flex-container">
+                <div class="logo-section">
+                    <?php if (!empty($s['company_logo']) && file_exists($s['company_logo'])): ?>
+                        <img src="<?php echo $s['company_logo']; ?>" alt="Logo">
+                    <?php else: ?>
+                        <div class="company-title"><?php echo strtoupper($s['company_name']); ?></div>
+                    <?php endif; ?>
                 </div>
-                <div class="fw-bold">ORIGINAL</div>
-            </div>
-
-            <!-- Party Details -->
-            <div class="d-flex justify-content-between border-top-none" style="border-bottom: 2px solid #000;">
-                <div style="width: 70%; padding: 10px;">
-                    <strong>M/s.: <?php echo strtoupper($data['name']); ?></strong><br>
-                    <div style="margin-left: 35px; min-height: 40px;">
-                        <?php echo $data['address']; ?>
+                <div class="title-section">
+                    <div class="estimate-text" style="font-size: 20px;"><?php echo strtoupper($title); ?></div>
+                    <?php if (isset($data['dept_id']) && isset($departments[$data['dept_id']])): ?>
+                        <div style="font-size: 13px; color: #C9A14A; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px;">
+                            <?php echo $departments[$data['dept_id']]; ?>
+                        </div>
+                    <?php endif; ?>
+                    <div class="bill-info">
+                        Bill No: <b>#<?php echo $data['bill_no'] ?? $data['id']; ?></b><br>
+                        Date: <b><?php echo date('d-m-Y', strtotime($data['date'])); ?></b>
                     </div>
                 </div>
-                <div style="width: 30%; border-left: 2px solid #000; padding: 10px;">
-                    <div>NO. : <b><?php echo $data['bill_no'] ?? $data['id']; ?></b></div>
-                    <div style="margin-top: 5px;">DATE : <b><?php echo date('d/m/Y', strtotime($data['date'])); ?></b></div>
-                </div>
             </div>
 
-            <!-- Items Table -->
-            <?php if ($items): ?>
-            <div style="min-height: 220px; border-bottom: 2px solid #000;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 5%;">Sr</th>
-                            <th style="width: 45%; text-align: left;">Description</th>
-                        <?php if ($data['dept_id'] == 3): ?>
-                            <th style="border-right: 2px solid #000;">Foot</th>
-                            <th style="border-right: 2px solid #000;">PCS</th>
-                            <th style="border-right: 2px solid #000;">RFT</th>
-                        <?php else: ?>
-                            <th style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?> border-right: 2px solid #000;">Unit</th>
-                            <?php if ($data['dept_id'] == 2): ?>
-                                <th style="border-right: 2px solid #000;">Color</th>
-                            <?php endif; ?>
-                            <?php if ($data['dept_id'] != 2): ?>
-                                <th style="border-right: 2px solid #000;">Pcs</th>
-                            <?php endif; ?>
-                            <th style="border-right: 2px solid #000;"><?php echo ($data['dept_id'] == 2) ? 'Weight' : 'Kgs'; ?></th>
-                        <?php endif; ?>
-                        <th style="border-right: 2px solid #000;">Rate</th>
-                        <th>Amount</th>
+            <div class="company-address" style="margin-bottom: 20px;">
+                <?php echo $s['company_address']; ?>
+            </div>
+
+            <div class="gold-line" style="margin: 20px 0;"></div>
+
+            <div class="billed-to-label">Billed To:</div>
+            <div class="billed-to-content" style="margin-bottom: 25px;">
+                <span class="billed-to-name"><?php echo $data['name']; ?></span>
+                <?php if($data['address']): ?>
+                    <?php echo nl2br(strtoupper($data['address'])); ?><br>
+                <?php endif; ?>
+                <?php if($data['mobile']): ?>
+                    Mobile: <?php echo $data['mobile']; ?>
+                <?php endif; ?>
+            </div>
+
+            <table class="accounting-table">
+                <thead>
+                    <tr>
+                        <th style="width: 45%; padding: 8px 10px;">Item Description</th>
+                        <th class="text-center" style="width: 10%; padding: 8px 10px;">Unit</th>
+                        <th class="text-right" style="width: 10%; padding: 8px 10px;">Pcs</th>
+                        <th class="text-right" style="width: 10%; padding: 8px 10px;">Kgs</th>
+                        <th class="text-right" style="width: 12%; padding: 8px 10px;">Rate</th>
+                        <th class="text-right" style="width: 13%; padding: 8px 10px;">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php 
-                    $sr = 1;
-                    $total_pcs = 0;
-                    $total_kgs = 0;
-                    $total_feet = 0;
-                    while($item = $items->fetch_assoc()): 
-                        $total_pcs += $item['qty_pcs'];
-                        $total_kgs += $item['qty_kgs'];
-                        $total_feet += $item['feet'];
-                    ?>
+                    <?php if ($items): while($item = $items->fetch_assoc()): ?>
                     <tr>
-                        <td style="border-right: 2px solid #000; text-align: center;"><?php echo ($sr++); ?></td>
-                        <td style="border-right: 2px solid #000;"><?php echo $item['prod_name']; ?><?php echo ($data['dept_id'] == 2 && !empty($item['color'])) ? " (".$item['color'].")" : ""; ?></td>
-                        
-                        <?php if ($data['dept_id'] == 3): ?>
-                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($item['feet'], 2); ?></td>
-                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($item['qty_pcs'], 2); ?></td>
-                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($item['qty_kgs'], 3); ?></td>
-                        <?php else: ?>
-                            <td style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?> border-right: 2px solid #000;"><?php echo $item['unit']; ?></td>
-                            <?php if ($data['dept_id'] == 2): ?>
-                                <td style="border-right: 2px solid #000;"><?php echo $item['color']; ?></td>
-                            <?php endif; ?>
-                            <?php if ($data['dept_id'] != 2): ?>
-                                <td style="border-right: 2px solid #000; text-align: right;"><?php echo $item['qty_pcs']; ?></td>
-                            <?php endif; ?>
-                            <td style="border-right: 2px solid #000; text-align: right;"><?php echo $item['qty_kgs']; ?><?php echo ($data['dept_id'] == 2) ? ' kg' : ''; ?></td>
-                        <?php endif; ?>
-                        
-                        <td style="border-right: 2px solid #000; text-align: right;"><?php echo number_format($item['rate'], 2); ?></td>
-                        <td style="text-align: right;"><?php echo number_format($item['total'], 2); ?></td>
+                        <td style="padding: 10px;">
+                            <?php echo $item['prod_name']; ?>
+                            <?php if (!empty($item['color'])) echo " (".$item['color'].")"; ?>
+                        </td>
+                        <td class="text-center" style="padding: 10px;"><?php echo $item['unit']; ?></td>
+                        <td class="text-right" style="padding: 10px;"><?php echo number_format($item['qty_pcs'], 2); ?></td>
+                        <td class="text-right" style="padding: 10px;"><?php echo number_format($item['qty_kgs'], 2); ?></td>
+                        <td class="text-right" style="padding: 10px;">₹<?php echo number_format($item['rate'], 2); ?></td>
+                        <td class="text-right" style="padding: 10px;"><b>₹<?php echo number_format($item['total'], 2); ?></b></td>
                     </tr>
-                    <?php endwhile; ?>
+                    <?php endwhile; endif; ?>
                 </tbody>
-                <tfoot style="font-weight: bold; border-top: 2px solid #000; background: #fdfdfd;">
-                    <tr>
-                        <td colspan="2">TOTAL</td>
-                        <?php if ($data['dept_id'] == 3): ?>
-                            <td class="text-right"><?php echo number_format($total_feet, 2); ?></td>
-                            <td class="text-right"><?php echo number_format($total_pcs, 2); ?></td>
-                            <td class="text-right"><?php echo number_format($total_kgs, 3); ?></td>
-                        <?php else: ?>
-                            <td style="<?php echo ($data['dept_id'] == 2) ? 'display: none;' : ''; ?>"></td>
-                            <?php if ($data['dept_id'] == 2): ?>
-                                <td></td>
-                            <?php endif; ?>
-                            <?php if ($data['dept_id'] != 2): ?>
-                                <td class="text-right"><?php echo number_format($total_pcs, 2); ?></td>
-                            <?php endif; ?>
-                            <td class="text-right"><?php echo number_format($total_kgs, 2); ?><?php echo ($data['dept_id'] == 2) ? ' kg' : ''; ?></td>
-                        <?php endif; ?>
-                        <td colspan="2"></td>
-                    </tr>
-                </tfoot>
             </table>
-            </div>
-            <?php else: ?>
-            <div style="border-bottom: 2px solid #000; padding: 15px; min-height: 200px;">
-                <strong>Description:</strong><br>
-                <?php echo $data['description'] ?: 'No details provided.'; ?>
-                <?php if (isset($data['amount'])): ?>
-                    <div class="mt-3 fs-5">Amount: <b><?php echo format_currency($data['amount']); ?></b></div>
+
+            <div class="totals-container" style="margin-top: 25px;">
+                <div class="total-row">
+                    <span>Total Amount:</span>
+                    <span>₹<?php echo number_format($data['sub_total'] ?? $data['amount'] ?? 0, 2); ?></span>
+                </div>
+                <?php if (($data['discount'] ?? 0) > 0): ?>
+                <div class="total-row">
+                    <span>Discount:</span>
+                    <span>-₹<?php echo number_format($data['discount'], 2); ?></span>
+                </div>
                 <?php endif; ?>
-            </div>
-            <?php endif; ?>
-
-            <!-- Footer / Totals Section -->
-            <div class="d-flex justify-content-between p-0">
-                <div style="width: 65%; padding: 5px;" class="fw-bold">
-                    <div style="margin-top: 5px; font-size: 11px;">Rs : <?php echo convert_to_words($data['total_amount'] ?? $data['amount'] ?? 0); ?> Only</div>
-                    <?php if ($data['dept_id'] == 2 || $data['dept_id'] == 3): ?>
-                        <div style="margin-top: 5px; font-size: 11px;">Colour : NEW ANODISE</div>
-                    <?php endif; ?>
+                <?php if (($data['transport_charge'] ?? 0) > 0): ?>
+                <div class="total-row">
+                    <span>Transport:</span>
+                    <span>+₹<?php echo number_format($data['transport_charge'], 2); ?></span>
                 </div>
-                <div style="width: 35%; border-left: 2px solid #000; padding: 0;">
-                    <div class="d-flex justify-content-between p-1" style="border-bottom: 1px solid #000; font-size: 11px;">
-                        <span>Sub Total</span>
-                        <span class="fw-bold"><?php echo number_format($data['sub_total'] ?? $data['amount'] ?? 0, 2); ?></span>
-                    </div>
-                    <?php if (($data['discount'] ?? 0) > 0): 
-                        $disc_p = round(($data['discount'] / ($data['sub_total'] ?: 1)) * 100, 2);
-                    ?>
-                    <div class="d-flex justify-content-between p-1" style="border-bottom: 1px solid #000; font-size: 11px;">
-                        <span>Discount (<?php echo $disc_p; ?>%) (-)</span>
-                        <span class="fw-bold"><?php echo number_format($data['discount'], 2); ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if (($data['transport_charge'] ?? 0) > 0): ?>
-                    <div class="d-flex justify-content-between p-1" style="border-bottom: 1px solid #000; font-size: 11px;">
-                        <span>Transport Ch. (+)</span>
-                        <span class="fw-bold"><?php echo number_format($data['transport_charge'], 2); ?></span>
-                    </div>
-                    <?php endif; ?>
-                    <div class="d-flex justify-content-between p-1" style="font-size: 13px;">
-                        <span class="fw-bold">Total</span>
-                        <span class="fw-bold"><?php echo number_format($data['total_amount'] ?? $data['amount'] ?? 0, 2); ?></span>
-                    </div>
+                <?php endif; ?>
+                
+                <div class="grand-total-row" style="padding: 10px 0;">
+                    <span class="grand-total-label" style="font-size: 17px;">Grand Total:</span>
+                    <span class="grand-total-value" style="font-size: 17px;">₹<?php echo number_format($data['total_amount'] ?? $data['amount'] ?? 0, 2); ?></span>
                 </div>
             </div>
 
-            <div class="text-center p-2 small-text" style="border-top: 2px solid #000;">
-                Thank you for your business! This is a computer generated invoice.
+            <div class="invoice-footer" style="bottom: 15px;">
+                <div class="thanks-msg">Thank you for your business!</div>
+                <div class="generated-msg">This is a computer generated invoice.</div>
             </div>
-
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
-        const waMsg = <?php echo json_encode($wa_msg_raw); ?>;
-        const waPhone = <?php echo json_encode($wa_phone); ?>;
-        const apiReady = <?php echo $oceanhub_ready ? 'true' : 'false'; ?>;
         const fileName = 'Invoice_#<?php echo $data['bill_no'] ?? $data['id']; ?>.pdf';
 
         function downloadPDF() {
             const element = document.getElementById('invoice-content');
             const opt = {
-                margin:       10,
+                margin:       [10, 5, 10, 5],
                 filename:     fileName,
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
+                html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             return html2pdf().set(opt).from(element).save();

@@ -191,7 +191,9 @@ if ($party_id) {
                         <td class="text-end fw-bold"><?php echo format_currency($opening_balance); ?></td>
                     </tr>
                     <?php 
-                    $running_balance = $opening_balance;
+                    $running_balance = (float)$opening_balance;
+                    $is_supplier = ($party['type'] == 'supplier');
+                    
                     if (empty($transactions)): ?>
                     <tr>
                         <td colspan="6" class="text-center py-4 text-muted small">No transactions found for the selected period.</td>
@@ -199,8 +201,14 @@ if ($party_id) {
                     <?php else: ?>
                     <?php 
                     foreach ($transactions as $tr): 
-                        $running_balance += ($tr['debit'] - $tr['credit']);
-?>
+                        if ($is_supplier) {
+                            // For Suppliers, Credit (Purchase) INCREASES debt, Debit (Payment) DECREASES debt
+                            $running_balance += ($tr['credit'] - $tr['debit']);
+                        } else {
+                            // For Customers, Debit (Sales) INCREASES debt, Credit (Receipt) DECREASES debt
+                            $running_balance += ($tr['debit'] - $tr['credit']);
+                        }
+                    ?>
                     <tr class="<?php echo ($tr['debit'] > 0) ? 'bg-dr' : 'bg-cr'; ?>">
                         <td><?php echo date('d-m-Y', strtotime($tr['date'])); ?></td>
                         <td>
@@ -210,7 +218,18 @@ if ($party_id) {
                         <td><?php echo $tr['bill_no']; ?></td>
                         <td class="text-end text-danger"><?php echo $tr['debit'] > 0 ? format_currency($tr['debit']) : '-'; ?></td>
                         <td class="text-end text-success"><?php echo $tr['credit'] > 0 ? format_currency($tr['credit']) : '-'; ?></td>
-                        <td class="text-end fw-bold"><?php echo format_currency($running_balance); ?></td>
+                        <td class="text-end fw-bold">
+                            <?php 
+                                $abs_bal = abs($running_balance);
+                                $suffix = "";
+                                if ($is_supplier) {
+                                    $suffix = ($running_balance >= 0) ? " (Cr)" : " (Dr)";
+                                } else {
+                                    $suffix = ($running_balance >= 0) ? " (Dr)" : " (Cr)";
+                                }
+                                echo format_currency($abs_bal) . $suffix; 
+                            ?>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                     <?php endif; ?>
@@ -219,8 +238,17 @@ if ($party_id) {
                     <tr>
                         <td colspan="5" class="text-end fw-bold">Closing Balance</td>
                         <td class="text-end fw-bold">
-                            <?php echo format_currency($running_balance); ?>
-                            <?php if (abs($running_balance) > 0): ?>
+                            <?php 
+                                $abs_bal = abs($running_balance);
+                                $suffix = "";
+                                if ($is_supplier) {
+                                    $suffix = ($running_balance >= 0) ? " (Cr)" : " (Dr)";
+                                } else {
+                                    $suffix = ($running_balance >= 0) ? " (Dr)" : " (Cr)";
+                                }
+                                echo format_currency($abs_bal) . $suffix; 
+                            ?>
+                            <?php if ($abs_bal > 0): ?>
                                 <button type="button" class="btn btn-sm btn-info ms-2 no-print" onclick="openKasarModal(<?php echo $running_balance; ?>)">
                                     <i class="fa fa-plus-circle me-1"></i> Add to Kasar
                                 </button>
