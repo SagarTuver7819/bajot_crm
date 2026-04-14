@@ -75,9 +75,8 @@ if ($party_id) {
     <div class="col-12 d-flex justify-content-between align-items-center">
         <h4 class="mb-0 text-theme">Party Ledger Report</h4>
         <div class="d-flex gap-2">
-            <button onclick="window.print()" class="btn btn-outline-gold btn-sm"><i class="fa fa-print me-1"></i> Print Ledger</button>
+            <button onclick="window.open('print_ledger.php?party_id=<?php echo $party_id; ?>&from_date=<?php echo $from_date; ?>&to_date=<?php echo $to_date; ?>', '_blank')" class="btn btn-outline-gold btn-sm"><i class="fa fa-print me-1"></i> Print Ledger</button>
             <?php if ($party_id): 
-                // Get mobile for sharing
                 $pm = $conn->query("SELECT mobile, name FROM parties WHERE id=$party_id")->fetch_assoc();
                 if ($pm['mobile']):
                     $wa_url = "print_ledger.php?party_id=" . $party_id . "&from_date=" . $from_date . "&to_date=" . $to_date . "&autoshare=1";
