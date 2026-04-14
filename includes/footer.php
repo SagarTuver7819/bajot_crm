@@ -135,7 +135,7 @@
     </script>
 
     <!-- Silent WhatsApp Share Iframe -->
-    <iframe id="silentShareFrame" style="display:none;"></iframe>
+    <iframe id="silentShareFrame" style="position: absolute; width: 100%; height: 0; border: 0; visibility: hidden; top: -9999px;"></iframe>
 
     <script>
         function handleWhatsAppShare(url, btn) {
