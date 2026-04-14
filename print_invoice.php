@@ -124,7 +124,7 @@ function convert_to_words($number) {
         /* Table Styling */
         .accounting-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .accounting-table thead th { background-color: #f9f9f9; padding: 12px 10px; text-align: left; font-size: 14px; font-weight: 800; color: #444; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
-        .accounting-table tbody td { padding: 15px 10px; font-size: 14px; color: #555; border-bottom: 1px solid #f1f1f1; }
+        .accounting-table tbody td { padding: 12px 10px; font-size: 13px; color: #444; border-bottom: 1px solid #f1f1f1; line-height: 1.4; vertical-align: top; word-break: break-word; }
         
         .text-right { text-align: right !important; }
         .text-center { text-align: center !important; }
@@ -149,7 +149,7 @@ function convert_to_words($number) {
         @media print {
             @page { 
                 size: A4 portrait; 
-                margin: 15mm; 
+                margin: 5mm; 
             }
             body { padding: 0; background: none; }
             .no-print { display: none !important; }
@@ -158,18 +158,19 @@ function convert_to_words($number) {
                 border: none; 
                 padding: 0; 
                 width: 100%; 
+                min-height: auto !important;
                 height: auto;
                 overflow: visible;
                 margin: 0;
             }
             .invoice-footer { 
-                margin-top: 60px;
-                text-align: center; 
-                border-top: 1px solid #eee;
-                padding-top: 20px;
+                position: relative;
+                margin-top: 30px;
+                bottom: 0;
             }
-            .accounting-table { margin-top: 20px; }
-            .totals-container { margin-top: 30px; }
+            .accounting-table { margin-top: 10px; }
+            .totals-container { margin-top: 15px; }
+            .gold-line { margin: 15px 0 !important; }
         }
     </style>
     <?php if (isset($_GET['silent'])): ?>
@@ -350,7 +351,7 @@ function convert_to_words($number) {
                     <?php foreach($item_rows as $item): ?>
                     <tr style="border-bottom:1px solid #eee;">
                         <td style="padding:12px 10px;"><?php echo $item['prod_name']; ?></td>
-                        <td class="text-center" style="padding:12px 10px;"><?php echo $item['unit']; ?></td>
+                        <td class="text-center" style="padding:12px 10px;"><?php echo (!empty($item['unit']) && $item['unit'] !== '0') ? $item['unit'] : 'Pcs'; ?></td>
                         <td class="text-right" style="padding:12px 10px;"><?php echo number_format($item['qty_pcs'], 2); ?></td>
                         <td class="text-right" style="padding:12px 10px;"><?php echo number_format($item['qty_kgs'], 3); ?></td>
                         <td class="text-right" style="padding:12px 10px;">₹<?php echo number_format($item['rate'], 2); ?></td>
@@ -361,8 +362,8 @@ function convert_to_words($number) {
                 <tfoot style="background:#fdfdfd;border-top:2px solid #C9A14A;border-bottom:2px solid #C9A14A;">
                     <tr style="font-weight:800;font-size:14px;">
                         <td colspan="2" class="text-right" style="padding:15px 10px;color:#C9A14A;">TOTAL</td>
-                        <td class="text-right" style="padding:15px 10px;"><?php echo number_format($total_pcs,2); ?> <small style="font-weight:400;color:#888;">Pcs</small></td>
-                        <td class="text-right" style="padding:15px 10px;"><?php echo number_format($total_kgs,3); ?> <small style="font-weight:400;color:#888;">Kgs</small></td>
+                        <td class="text-right" style="padding:15px 10px; width:10%; white-space: nowrap;"><?php echo number_format($total_pcs,2); ?> <span style="font-weight:400;color:#888;font-size:11px;">Pcs</span></td>
+                        <td class="text-right" style="padding:15px 10px; width:12%; white-space: nowrap;"><?php echo number_format($total_kgs,3); ?> <span style="font-weight:400;color:#888;font-size:11px;">Kgs</span></td>
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>

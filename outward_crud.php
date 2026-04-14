@@ -609,6 +609,7 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
         }
 
         document.querySelectorAll('.item-row').forEach(attachRowEvents);
+        calculateGrand(); // Initialize totals on load
     });
     </script>
 <?php endif; ?>
