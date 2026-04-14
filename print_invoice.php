@@ -39,7 +39,7 @@ if (!empty($data['mobile'])) {
     $wa_phone = preg_replace('/[^0-9]/', '', $data['mobile']);
     if (strlen($wa_phone) == 10) $wa_phone = "91" . $wa_phone;
     $curr_url = get_base_url() . "print_invoice.php?type=" . $type . "&id=" . $id;
-    $wa_msg_raw = "Hello " . $data['name'] . ",\n\nYour " . $title . " #" . ($data['bill_no'] ?? $data['id']) . " is ready.\nTotal Amount: " . format_currency($data['total_amount'] ?? $data['amount'] ?? 0) . "\n\nYou can view/download it here: " . $curr_url;
+    $wa_msg_raw = "Hello " . $data['name'] . ",\n\nYour " . $title . " #" . ($data['bill_no'] ?? $data['id']) . " is ready.\nTotal Amount: " . format_currency($data['total_amount'] ?? $data['amount'] ?? 0);
     $wa_msg = urlencode($wa_msg_raw);
 }
 $oceanhub_ready = function_exists('oceanhub_ready') && oceanhub_ready();
