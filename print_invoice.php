@@ -420,7 +420,7 @@ function convert_to_words($number) {
         const fileName = 'Invoice_#<?php echo $data['bill_no'] ?? $data['id']; ?>.pdf';
         const apiReady = <?php echo $oceanhub_ready ? 'true' : 'false'; ?>;
         const waPhone = '<?php echo $wa_phone; ?>';
-        const waMsg = '<?php echo addslashes($wa_msg_raw); ?>';
+        const waMsg = <?php echo json_encode($wa_msg_raw); ?>;
 
         // SweetAlert Toast Configuration
         const Toast = Swal.mixin({
