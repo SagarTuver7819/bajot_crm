@@ -154,7 +154,7 @@ if (isset($_GET['delete'])) {
                             <td class="fw-bold"><?php echo format_currency($row['total_amount']); ?></td>
                             <td class="text-center">
                                 <?php if ($row['mobile']): ?>
-                                    <a href="print_invoice.php?type=purchase&id=<?php echo $row['id']; ?>&autoshare=1" class="p-2 text-success" title="Send PDF on WhatsApp" target="_blank">
+                                    <a href="print_invoice.php?type=purchase&id=<?php echo $row['id']; ?>&autoshare=1" class="p-2 text-success" title="Send PDF on WhatsApp" onclick="handleWhatsAppShare(this.href, this); return false;">
                                         <i class="fa-brands fa-whatsapp fs-4"></i>
                                     </a>
                                 <?php else: ?>

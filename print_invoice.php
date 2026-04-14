@@ -172,6 +172,12 @@ function convert_to_words($number) {
             .totals-container { margin-top: 30px; }
         }
     </style>
+    <?php if (isset($_GET['silent'])): ?>
+    <style>
+        body { padding: 0; background: transparent; overflow: hidden; }
+        .no-print, .invoice-box { display: none !important; }
+    </style>
+    <?php endif; ?>
 </head>
 <body>
     <div class="btn-toolbar no-print">
@@ -183,7 +189,22 @@ function convert_to_words($number) {
             <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
             PRINT NOW
         </button>
+        <?php if ($wa_phone): ?>
+            <button onclick="sendPdfToWhatsApp(this)" id="btn-send-pdf" style="background-color: #25D366;">
+                <i class="fa-brands fa-whatsapp" id="wa-icon" style="font-size: 18px;"></i>
+                <span id="wa-spinner" style="display: none; width: 18px; height: 18px; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite;"></span>
+                SEND ON WHATSAPP
+            </button>
+        <?php endif; ?>
     </div>
+
+    <!-- Font Awesome (needed for WhatsApp icon) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" class="no-print">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" class="no-print"></script>
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 
     <div id="invoice-content">
         <div class="invoice-box">
@@ -390,6 +411,18 @@ function convert_to_words($number) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         const fileName = 'Invoice_#<?php echo $data['bill_no'] ?? $data['id']; ?>.pdf';
+        const apiReady = <?php echo $oceanhub_ready ? 'true' : 'false'; ?>;
+        const waPhone = '<?php echo $wa_phone; ?>';
+        const waMsg = '<?php echo addslashes($wa_msg_raw); ?>';
+
+        // SweetAlert Toast Configuration
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
 
         function downloadPDF() {
             const element = document.getElementById('invoice-content');
@@ -412,17 +445,16 @@ function convert_to_words($number) {
                 html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
-            // Use outputPdf() directly which is more stable in 0.10.1
             return html2pdf().set(opt).from(element).outputPdf('blob');
         }
 
         async function sendPdfToWhatsApp(btn, forceTest = false) {
             if (!apiReady) {
-                alert('WhatsApp API not configured.');
+                Swal.fire('Error', 'WhatsApp API not configured.', 'error');
                 return;
             }
             if (!waPhone) {
-                alert('No customer mobile number found.');
+                Swal.fire('Error', 'No customer mobile number found.', 'error');
                 return;
             }
 
@@ -433,19 +465,17 @@ function convert_to_words($number) {
                 btn.style.opacity = '0.7';
                 btn.style.pointerEvents = 'none';
                 if (icon) icon.style.display = 'none';
-                if (spinner) spinner.style.display = 'block';
+                if (spinner) spinner.style.display = 'inline-block';
             }
 
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const isTestMode = forceTest || urlParams.has('testmode');
                 const formData = new FormData();
-                if (!isTestMode) {
-                    const pdfBlob = await generatePdfBlob();
-                    formData.append('pdf', pdfBlob, fileName);
-                } else {
-                    formData.append('test_mode', '1');
-                }
+                
+                const pdfBlob = await generatePdfBlob();
+                formData.append('pdf', pdfBlob, fileName);
+                
                 formData.append('phone', waPhone);
                 formData.append('message', waMsg || 'Invoice PDF');
                 formData.append('type', '<?php echo $type; ?>');
@@ -459,25 +489,31 @@ function convert_to_words($number) {
                 const raw = await res.text();
                 let data = {};
                 try { data = JSON.parse(raw); } catch (e) { data = { raw }; }
+                
                 if (!res.ok || !data.ok) {
-                    const parts = [];
-                    const baseMsg = data.error || data.response || data.raw || 'Failed to send PDF';
-                    parts.push(baseMsg);
-                    if (data.http_code) parts.push('HTTP ' + data.http_code);
-                    if (data.response && data.response !== baseMsg) parts.push('Resp: ' + data.response);
-                    if (data.curl_error) parts.push('cURL: ' + data.curl_error);
-                    throw new Error(parts.join(' | '));
+                    throw new Error(data.error || 'Failed to send PDF');
                 }
 
-                alert('PDF sent successfully on WhatsApp.');
+                Toast.fire({
+                    icon: 'success',
+                    title: 'PDF share successfully'
+                });
+
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'whatsapp_share_result', success: true }, '*');
+                }
             } catch (err) {
                 console.error('Send failed:', err);
-                alert('Failed to send PDF: ' + (err.message || 'Please try again.'));
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'whatsapp_share_result', success: false, error: err.message }, '*');
+                } else {
+                    Swal.fire('Error', 'Failed to send PDF: ' + (err.message || 'Please try again.'), 'error');
+                }
             } finally {
                 if (btn) {
                     btn.style.opacity = '1';
                     btn.style.pointerEvents = 'auto';
-                    if (icon) icon.style.display = 'block';
+                    if (icon) icon.style.display = 'inline-block';
                     if (spinner) spinner.style.display = 'none';
                 }
             }

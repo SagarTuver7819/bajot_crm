@@ -197,7 +197,7 @@ if (isset($_GET['delete'])) {
                                     $wa_mobile = preg_replace('/[^0-9]/', '', $row['mobile']);
                                     if (strlen($wa_mobile) == 10) $wa_mobile = "91" . $wa_mobile;
                                 ?>
-                                    <a href="print_invoice.php?type=sales&id=<?php echo $row['id']; ?>&autoshare=1" class="p-2 text-success" title="Send PDF on WhatsApp" target="_blank">
+                                    <a href="print_invoice.php?type=sales&id=<?php echo $row['id']; ?>&autoshare=1" class="p-2 text-success" title="Send PDF on WhatsApp" onclick="handleWhatsAppShare(this.href, this); return false;">
                                         <i class="fa-brands fa-whatsapp fs-4"></i>
                                     </a>
                                 <?php else: ?>
