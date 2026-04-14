@@ -6,10 +6,10 @@ if (!defined('OCEANHUB_API_URL')) {
     define('OCEANHUB_API_URL', 'https://oc-web.oceanhub.co.in/api/create-message');
 }
 if (!defined('OCEANHUB_APPKEY')) {
-    define('OCEANHUB_APPKEY', 'e4f8e984-9b3e-4a5c-94a8-fc57c0c75489');
+    define('OCEANHUB_APPKEY', 'cbb4fa1c-f747-4e49-93a0-26c320202527');
 }
 if (!defined('OCEANHUB_AUTHKEY')) {
-    define('OCEANHUB_AUTHKEY', 'oituCXmBGqh1tnEG1IMfjWw7rpGKdeXDBvUX6QcgA3EzO79ywn');
+    define('OCEANHUB_AUTHKEY', '7Ae6172xA1vlpp8rq64g6A4B9UeVwiOFuAfP2izyszuwGkFgSx');
 }
 if (!defined('OCEANHUB_SANDBOX')) {
     // Set to 'true' only if OceanHub requires sandbox mode
