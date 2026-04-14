@@ -176,13 +176,6 @@ function convert_to_words($number) {
     <style>
         body { padding: 0; background: transparent; overflow: hidden; }
         .no-print { display: none !important; }
-        .invoice-box { 
-            position: absolute;
-            left: -9999px;
-            top: -9999px;
-            visibility: visible !important;
-            display: block !important;
-        }
     </style>
     <?php endif; ?>
 </head>
