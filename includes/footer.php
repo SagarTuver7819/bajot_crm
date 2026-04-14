@@ -133,5 +133,60 @@
             }
         });
     </script>
+
+    <!-- Silent WhatsApp Share Iframe -->
+    <iframe id="silentShareFrame" style="display:none;"></iframe>
+
+    <script>
+        function handleWhatsAppShare(url, btn) {
+            const originalHtml = btn.innerHTML;
+            const spinner = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            
+            // Add loading state
+            btn.classList.add('disabled');
+            btn.innerHTML = spinner;
+            
+            // Set iframe source with silent flag
+            const silentUrl = url + (url.includes('?') ? '&' : '?') + 'silent=1';
+            document.getElementById('silentShareFrame').src = silentUrl;
+            
+            // Listen for message from iframe
+            const messageHandler = function(event) {
+                if (event.data && event.data.type === 'whatsapp_share_result') {
+                    // Restore button
+                    btn.classList.remove('disabled');
+                    btn.innerHTML = originalHtml;
+                    
+                    if (event.data.success) {
+                        Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            timerProgressBar: true
+                        }).fire({
+                            icon: 'success',
+                            title: 'PDF share successfully'
+                        });
+                    } else {
+                        Swal.fire('Error', event.data.error || 'Failed to share PDF', 'error');
+                    }
+                    
+                    window.removeEventListener('message', messageHandler);
+                }
+            };
+            
+            window.addEventListener('message', messageHandler);
+            
+            // Timeout safety
+            setTimeout(() => {
+                if (btn.classList.contains('disabled')) {
+                    btn.classList.remove('disabled');
+                    btn.innerHTML = originalHtml;
+                    window.removeEventListener('message', messageHandler);
+                }
+            }, 30000);
+        }
+    </script>
 </body>
 </html>
