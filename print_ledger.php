@@ -147,8 +147,11 @@ $wa_msg = "Hello " . $party['name'] . ",\n\nPlease find your ledger statement fo
         }
 
         window.onload = function() {
-            if (new URLSearchParams(window.location.search).has('autoshare')) {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('autoshare')) {
                 setTimeout(sendLedgerToWhatsApp, 500);
+            } else {
+                window.print();
             }
         };
     </script>
