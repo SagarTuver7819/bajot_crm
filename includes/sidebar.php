@@ -47,8 +47,14 @@
         <?php endif; ?>
         
         <?php if (has_permission('vouchers', 'view')): ?>
-        <a href="vouchers.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'vouchers.php') ? 'active' : ''; ?>">
-            <i class="fa fa-receipt"></i> <span>Cash / Bank</span>
+        <a href="vouchers.php?vmethod=cash" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'vouchers.php' && ($_GET['vmethod'] ?? 'cash') == 'cash') ? 'active' : ''; ?>">
+            <i class="fa fa-money-bill-wave"></i> <span>Cash Transactions</span>
+        </a>
+        <a href="vouchers.php?vmethod=bank" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'vouchers.php' && ($_GET['vmethod'] ?? '') == 'bank') ? 'active' : ''; ?>">
+            <i class="fa fa-university"></i> <span>Bank Transactions</span>
+        </a>
+        <a href="banks.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'banks.php') ? 'active' : ''; ?>">
+            <i class="fa fa-building-columns"></i> <span>Bank Accounts</span>
         </a>
         <?php endif; ?>
 
