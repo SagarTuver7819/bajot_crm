@@ -21,7 +21,7 @@ if (isset($_POST['add_role'])) {
             // Initialize permissions for all modules
             $modules = [
                 'dashboard', 'parties', 'products', 'inward', 'outward', 'inventory', 
-                'vouchers', 'expense_category', 'expense_dashboard', 'expenses', 
+                'vouchers', 'banks', 'expense_category', 'expense_dashboard', 'expenses', 
                 'reports', 'ledger', 'party_balances', 'kasar', 
                 'settings', 'roles', 'users'
             ];
