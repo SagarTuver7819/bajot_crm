@@ -104,7 +104,7 @@ $wa_msg = "Hello " . $party['name'] . ",\n\nPlease find your ledger statement fo
                     else $running_balance += ($tr['debit'] - $tr['credit']);
                 ?>
                 <tr>
-                    <td><?php echo date('d-m-Y', strtotime($tr['date'])); ?></td>
+                    <td><?php echo ($tr['date'] && $tr['date'] != '0000-00-00') ? date('d-m-Y', strtotime($tr['date'])) : '-'; ?></td>
                     <td><?php echo $tr['type']; ?></td>
                     <td><?php echo $departments[$tr['dept_id']] ?? 'Main'; ?></td>
                     <td><?php echo $tr['bill_no']; ?></td>
