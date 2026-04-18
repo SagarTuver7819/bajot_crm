@@ -19,11 +19,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_voucher'])) {
 
     if ($edit_id > 0) {
         $stmt = $conn->prepare("UPDATE vouchers SET type=?, payment_method=?, bank_id=?, party_id=?, amount=?, date=?, description=? WHERE id=?");
-        $stmt->bind_param("ssiiidss", $type, $payment_method, $bank_id, $party_id, $amount, $date, $desc, $edit_id);
+        $stmt->bind_param("ssiidssi", $type, $payment_method, $bank_id, $party_id, $amount, $date, $desc, $edit_id);
     } else {
         $dept_id = (int)$_SESSION['dept_id'];
         $stmt = $conn->prepare("INSERT INTO vouchers (dept_id, type, payment_method, bank_id, party_id, amount, date, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("issiiids", $dept_id, $type, $payment_method, $bank_id, $party_id, $amount, $date, $desc);
+        $stmt->bind_param("issiidss", $dept_id, $type, $payment_method, $bank_id, $party_id, $amount, $date, $desc);
     }
     
     if ($stmt->execute()) {
