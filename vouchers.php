@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_voucher'])) {
     $bank_id = (isset($_POST['bank_id']) && $_POST['bank_id'] != '') ? (int)$_POST['bank_id'] : null;
     $party_id = (int)$_POST['party_id'] ?: null;
     $amount = (float)$_POST['amount'];
-    $date = trim($_POST['date']);
+    $date = !empty($_POST['date']) ? trim($_POST['date']) : date('Y-m-d');
     $desc = trim($_POST['description']);
     $edit_id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 
@@ -105,7 +105,7 @@ if (isset($_GET['delete'])) {
                             elseif($row['type'] == 'expense') $color = 'text-info';
                         ?>
                         <tr>
-                            <td><?php echo date('d-m-Y', strtotime($row['date'])); ?></td>
+                            <td><?php echo ($row['date'] && $row['date'] != '0000-00-00') ? date('d-m-Y', strtotime($row['date'])) : '-'; ?></td>
                             <td><span class="badge <?php echo ($row['type'] == 'receipt') ? 'bg-success' : (($row['type'] == 'payment') ? 'bg-danger' : 'bg-info'); ?>"><?php echo strtoupper($row['type']); ?></span></td>
                             <?php if($vmethod == 'bank'): ?>
                                 <td class="small fw-bold text-info"><?php echo $row['bank_name'] ?: '-'; ?></td>
@@ -159,7 +159,7 @@ if (isset($_GET['delete'])) {
                 
                 <div class="mb-3">
                     <label class="form-label">Transaction Date *</label>
-                    <input type="date" name="date" class="form-control" value="<?php echo $voucher ? $voucher['date'] : date('Y-m-d'); ?>" required>
+                    <input type="date" name="date" class="form-control" value="<?php echo ($voucher && $voucher['date'] && $voucher['date'] != '0000-00-00') ? $voucher['date'] : date('Y-m-d'); ?>" required>
                 </div>
 
                 <?php if ($vmethod == 'bank'): ?>

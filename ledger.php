@@ -203,7 +203,7 @@ if ($party_id) {
                         }
                     ?>
                     <tr class="<?php echo ($tr['debit'] > 0) ? 'bg-dr' : 'bg-cr'; ?>">
-                        <td><?php echo date('d-m-Y', strtotime($tr['date'])); ?></td>
+                        <td><?php echo ($tr['date'] && $tr['date'] != '0000-00-00') ? date('d-m-Y', strtotime($tr['date'])) : '-'; ?></td>
                         <td>
                             <strong><?php echo $tr['type']; ?></strong>
                             <div class="extra-small small text-muted"><?php echo htmlspecialchars($tr['description'] ?? ''); ?></div>
