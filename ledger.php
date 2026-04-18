@@ -15,7 +15,7 @@ if ($party_id) {
     $opening_balance = $party['opening_balance'] ?? 0;
 
     // 1. Fetch Sales (Outwards)
-    $sales = $conn->query("SELECT id, date, bill_no, total_amount as amount, 'Sales' as type, '' as description FROM outwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+    $sales = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Sales' as type, '' as description FROM outwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
     while($sale = $sales->fetch_assoc()) {
         $sale['debit'] = $sale['amount'];
         $sale['credit'] = 0;
@@ -23,7 +23,7 @@ if ($party_id) {
     }
 
     // 2. Fetch Purchases (Inwards)
-    $purchases = $conn->query("SELECT id, date, bill_no, total_amount as amount, 'Purchase' as type, '' as description FROM inwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+    $purchases = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Purchase' as type, '' as description FROM inwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
     while($p = $purchases->fetch_assoc()) {
         $p['debit'] = 0; 
         $p['credit'] = $p['amount'];
@@ -31,7 +31,7 @@ if ($party_id) {
     }
 
     // 3. Fetch Vouchers
-    $vouchers = $conn->query("SELECT id, date, type as vtype, amount, description, 'Voucher' as type FROM vouchers WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+    $vouchers = $conn->query("SELECT id, dept_id, date, type as vtype, amount, description, 'Voucher' as type FROM vouchers WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
     while($v = $vouchers->fetch_assoc()) {
         $v['bill_no'] = "VCH-" . $v['id'];
         if ($v['vtype'] == 'receipt') {
@@ -48,8 +48,7 @@ if ($party_id) {
     }
 
     // 4. Fetch Kasars
-    $dept_id = (int)$_SESSION['dept_id'];
-    $kasars = $conn->query("SELECT id, date, amount, type as ktype, description, 'Kasar' as type FROM kasars WHERE dept_id=$dept_id AND party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+    $kasars = $conn->query("SELECT id, dept_id, date, amount, type as ktype, description, 'Kasar' as type FROM kasars WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
     if ($kasars) {
         while($k = $kasars->fetch_assoc()) {
             $k['bill_no'] = "KSR-" . $k['id'];
@@ -172,15 +171,16 @@ if ($party_id) {
                     <tr>
                         <th width="12%">Date</th>
                         <th>Particulars / Transaction Type</th>
-                        <th width="15%">Reference</th>
-                        <th width="15%" class="text-end">Debit (Dr)</th>
-                        <th width="15%" class="text-end">Credit (Cr)</th>
-                        <th width="15%" class="text-end">Balance</th>
+                        <th width="12%">Department</th>
+                        <th width="12%">Reference</th>
+                        <th width="12%" class="text-end">Debit (Dr)</th>
+                        <th width="12%" class="text-end">Credit (Cr)</th>
+                        <th width="12%" class="text-end">Balance</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr class="bg-light text-dark">
-                        <td colspan="5" class="text-end fw-bold">Opening Balance</td>
+                        <td colspan="6" class="text-end fw-bold">Opening Balance</td>
                         <td class="text-end fw-bold"><?php echo format_currency($opening_balance); ?></td>
                     </tr>
                     <?php 
@@ -208,6 +208,11 @@ if ($party_id) {
                             <strong><?php echo $tr['type']; ?></strong>
                             <div class="extra-small small text-muted"><?php echo htmlspecialchars($tr['description'] ?? ''); ?></div>
                         </td>
+                        <td>
+                            <span class="badge bg-secondary-subtle text-theme border border-secondary-subtle">
+                                <?php echo $departments[$tr['dept_id']] ?? 'Main'; ?>
+                            </span>
+                        </td>
                         <td><?php echo $tr['bill_no']; ?></td>
                         <td class="text-end text-danger"><?php echo $tr['debit'] > 0 ? format_currency($tr['debit']) : '-'; ?></td>
                         <td class="text-end text-success"><?php echo $tr['credit'] > 0 ? format_currency($tr['credit']) : '-'; ?></td>
@@ -229,7 +234,7 @@ if ($party_id) {
                 </tbody>
                 <tfoot class="table-dark">
                     <tr>
-                        <td colspan="5" class="text-end fw-bold">Closing Balance</td>
+                        <td colspan="6" class="text-end fw-bold">Closing Balance</td>
                         <td class="text-end fw-bold">
                             <?php 
                                 $abs_bal = abs($running_balance);

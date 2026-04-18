@@ -13,22 +13,29 @@ $settings = get_settings();
 $party = $conn->query("SELECT * FROM parties WHERE id=$party_id")->fetch_assoc();
 if (!$party) die("Party not found");
 
+// Department Definitions
+$departments = [
+    1 => 'Aluminium Section',
+    2 => 'Powder Coating',
+    3 => 'Anodizing Section'
+];
+
 // Fetch transactions logic (same as ledger.php)
 $transactions = [];
 $opening_balance = $party['opening_balance'] ?? 0;
 
 // Sales
-$sales = $conn->query("SELECT id, date, bill_no, total_amount as amount, 'Sales' as type FROM outwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+$sales = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Sales' as type FROM outwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
 while($sale = $sales->fetch_assoc()) {
     $sale['debit'] = $sale['amount']; $sale['credit'] = 0; $transactions[] = $sale;
 }
 // Purchases
-$purchases = $conn->query("SELECT id, date, bill_no, total_amount as amount, 'Purchase' as type FROM inwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+$purchases = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Purchase' as type FROM inwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
 while($p = $purchases->fetch_assoc()) {
     $p['debit'] = 0; $p['credit'] = $p['amount']; $transactions[] = $p;
 }
 // Vouchers
-$vouchers = $conn->query("SELECT id, date, type as vtype, amount, description, 'Voucher' as type FROM vouchers WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+$vouchers = $conn->query("SELECT id, dept_id, date, type as vtype, amount, description, 'Voucher' as type FROM vouchers WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
 while($v = $vouchers->fetch_assoc()) {
     $v['bill_no'] = "VCH-" . $v['id'];
     if ($v['vtype'] == 'receipt') { $v['debit'] = 0; $v['credit'] = $v['amount']; }
@@ -36,8 +43,7 @@ while($v = $vouchers->fetch_assoc()) {
     $transactions[] = $v;
 }
 // Kasars
-$dept_id = (int)$_SESSION['dept_id'];
-$kasars = $conn->query("SELECT id, date, amount, type as ktype, description, 'Kasar' as type FROM kasars WHERE dept_id=$dept_id AND party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+$kasars = $conn->query("SELECT id, dept_id, date, amount, type as ktype, description, 'Kasar' as type FROM kasars WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
 if ($kasars) while($k = $kasars->fetch_assoc()) {
     $k['bill_no'] = "KSR-" . $k['id'];
     if ($k['ktype'] == 'allowed') { $k['debit'] = 0; $k['credit'] = $k['amount']; }
@@ -81,13 +87,13 @@ $wa_msg = "Hello " . $party['name'] . ",\n\nPlease find your ledger statement fo
         <table>
             <thead>
                 <tr>
-                    <th>Date</th><th>Type</th><th>Ref#</th>
+                    <th>Date</th><th>Type</th><th>Department</th><th>Ref#</th>
                     <th class="text-end">Debit (Dr)</th><th class="text-end">Credit (Cr)</th><th class="text-end">Balance</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td colspan="5" class="text-end fw-bold">Opening Balance</td>
+                    <td colspan="6" class="text-end fw-bold">Opening Balance</td>
                     <td class="text-end fw-bold"><?php echo format_currency($opening_balance); ?></td>
                 </tr>
                 <?php 
@@ -99,7 +105,9 @@ $wa_msg = "Hello " . $party['name'] . ",\n\nPlease find your ledger statement fo
                 ?>
                 <tr>
                     <td><?php echo date('d-m-Y', strtotime($tr['date'])); ?></td>
-                    <td><?php echo $tr['type']; ?></td><td><?php echo $tr['bill_no']; ?></td>
+                    <td><?php echo $tr['type']; ?></td>
+                    <td><?php echo $departments[$tr['dept_id']] ?? 'Main'; ?></td>
+                    <td><?php echo $tr['bill_no']; ?></td>
                     <td class="text-end"><?php echo $tr['debit'] > 0 ? format_currency($tr['debit']) : '-'; ?></td>
                     <td class="text-end"><?php echo $tr['credit'] > 0 ? format_currency($tr['credit']) : '-'; ?></td>
                     <td class="text-end fw-bold">
@@ -108,7 +116,7 @@ $wa_msg = "Hello " . $party['name'] . ",\n\nPlease find your ledger statement fo
                 </tr>
                 <?php endforeach; ?>
                 <tr style="background:#f9f9f9;">
-                    <td colspan="5" class="text-end fw-bold">Closing Balance</td>
+                    <td colspan="6" class="text-end fw-bold">Closing Balance</td>
                     <td class="text-end fw-bold"><?php echo format_currency(abs($running_balance)); ?></td>
                 </tr>
             </tbody>
