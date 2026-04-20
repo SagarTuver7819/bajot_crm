@@ -20,7 +20,7 @@ if (isset($_POST['add_role'])) {
             $role_id = $conn->insert_id;
             // Initialize permissions for all modules
             $modules = [
-                'dashboard', 'parties', 'products', 'inward', 'outward', 'inventory', 
+                'dashboard', 'parties', 'products', 'employees', 'salaries', 'inward', 'outward', 'inventory', 
                 'vouchers', 'banks', 'expense_category', 'expense_dashboard', 'expenses', 
                 'reports', 'ledger', 'party_balances', 'kasar', 
                 'settings', 'roles', 'users'

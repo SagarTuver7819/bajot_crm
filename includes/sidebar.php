@@ -27,6 +27,18 @@
             <i class="fa fa-box"></i> <span>Product Management</span>
         </a>
         <?php endif; ?>
+
+        <?php if (has_permission('employees', 'view')): ?>
+        <a href="employees.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'employees.php') ? 'active' : ''; ?>">
+            <i class="fa fa-id-card"></i> <span>Employee Master</span>
+        </a>
+        <a href="salaries.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'salaries.php') ? 'active' : ''; ?>">
+            <i class="fa fa-calculator"></i> <span>Salary Master</span>
+        </a>
+        <a href="salary_advances.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'salary_advances.php') ? 'active' : ''; ?>">
+            <i class="fa fa-hand-holding-dollar"></i> <span>Salary Advance</span>
+        </a>
+        <?php endif; ?>
         
         <?php if (has_permission('inward', 'view')): ?>
         <a href="inward_crud.php" class="nav-link <?php echo (basename($_SERVER['PHP_SELF']) == 'inward_crud.php') ? 'active' : ''; ?>">
