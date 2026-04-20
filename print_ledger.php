@@ -6,6 +6,7 @@ check_login();
 $party_id = isset($_GET['party_id']) ? (int)$_GET['party_id'] : 0;
 $from_date = $_GET['from_date'] ?? date('Y-m-01');
 $to_date = $_GET['to_date'] ?? date('Y-m-d');
+$dept_id = isset($_GET['dept_id']) ? (int)$_GET['dept_id'] : (isset($_SESSION['dept_id']) ? (int)$_SESSION['dept_id'] : 0);
 
 if (!$party_id) die("Invalid Party");
 
@@ -24,21 +25,22 @@ $departments = [
 $transactions = [];
 $base_opening = (float)($party['opening_balance'] ?? 0);
 $is_supplier = ($party['type'] == 'supplier');
+$where_dept = $dept_id ? " AND dept_id=$dept_id " : "";
 
 // Calculate aggregated transactions BEFORE from_date to get the true opening balance
 $before_debit = 0;
 $before_credit = 0;
 
 // Sales before
-$sales_before = $conn->query("SELECT SUM(total_amount) as total FROM outwards WHERE party_id=$party_id AND date < '$from_date'")->fetch_assoc();
+$sales_before = $conn->query("SELECT SUM(total_amount) as total FROM outwards WHERE party_id=$party_id AND date < '$from_date' $where_dept")->fetch_assoc();
 $before_debit += (float)($sales_before['total'] ?? 0);
 
 // Purchases before
-$purchases_before = $conn->query("SELECT SUM(total_amount) as total FROM inwards WHERE party_id=$party_id AND date < '$from_date'")->fetch_assoc();
+$purchases_before = $conn->query("SELECT SUM(total_amount) as total FROM inwards WHERE party_id=$party_id AND date < '$from_date' $where_dept")->fetch_assoc();
 $before_credit += (float)($purchases_before['total'] ?? 0);
 
 // Vouchers before
-$vouchers_before = $conn->query("SELECT type, SUM(amount) as total FROM vouchers WHERE party_id=$party_id AND date < '$from_date' GROUP BY type");
+$vouchers_before = $conn->query("SELECT type, SUM(amount) as total FROM vouchers WHERE party_id=$party_id AND date < '$from_date' $where_dept GROUP BY type");
 if ($vouchers_before) {
     while($vb = $vouchers_before->fetch_assoc()){
         if($vb['type'] == 'receipt') $before_credit += (float)$vb['total'];
@@ -47,7 +49,7 @@ if ($vouchers_before) {
 }
 
 // Kasars before
-$kasars_before = $conn->query("SELECT type, SUM(amount) as total FROM kasars WHERE party_id=$party_id AND date < '$from_date' GROUP BY type");
+$kasars_before = $conn->query("SELECT type, SUM(amount) as total FROM kasars WHERE party_id=$party_id AND date < '$from_date' $where_dept GROUP BY type");
 if ($kasars_before) {
     while($kb = $kasars_before->fetch_assoc()){
         if($kb['type'] == 'allowed') $before_credit += (float)$kb['total'];
@@ -62,17 +64,17 @@ if ($is_supplier) {
 }
 
 // Sales
-$sales = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Sales' as type FROM outwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+$sales = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Sales' as type FROM outwards WHERE party_id=$party_id AND (date BETWEEN '$from_date' AND '$to_date') $where_dept");
 while($sale = $sales->fetch_assoc()) {
     $sale['debit'] = $sale['amount']; $sale['credit'] = 0; $transactions[] = $sale;
 }
 // Purchases
-$purchases = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Purchase' as type FROM inwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+$purchases = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Purchase' as type FROM inwards WHERE party_id=$party_id AND (date BETWEEN '$from_date' AND '$to_date') $where_dept");
 while($p = $purchases->fetch_assoc()) {
     $p['debit'] = 0; $p['credit'] = $p['amount']; $transactions[] = $p;
 }
 // Vouchers
-$vouchers = $conn->query("SELECT id, dept_id, date, type as vtype, amount, description, 'Voucher' as type FROM vouchers WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+$vouchers = $conn->query("SELECT id, dept_id, date, type as vtype, amount, description, 'Voucher' as type FROM vouchers WHERE party_id=$party_id AND (date BETWEEN '$from_date' AND '$to_date') $where_dept");
 while($v = $vouchers->fetch_assoc()) {
     $v['bill_no'] = "VCH-" . $v['id'];
     if ($v['vtype'] == 'receipt') { $v['debit'] = 0; $v['credit'] = $v['amount']; }
@@ -80,7 +82,7 @@ while($v = $vouchers->fetch_assoc()) {
     $transactions[] = $v;
 }
 // Kasars
-$kasars = $conn->query("SELECT id, dept_id, date, amount, type as ktype, description, 'Kasar' as type FROM kasars WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+$kasars = $conn->query("SELECT id, dept_id, date, amount, type as ktype, description, 'Kasar' as type FROM kasars WHERE party_id=$party_id AND (date BETWEEN '$from_date' AND '$to_date') $where_dept");
 if ($kasars) while($k = $kasars->fetch_assoc()) {
     $k['bill_no'] = "KSR-" . $k['id'];
     if ($k['ktype'] == 'allowed') { $k['debit'] = 0; $k['credit'] = $k['amount']; }
@@ -119,18 +121,21 @@ $wa_msg = "Hello " . $party['name'] . ",\n\nPlease find your ledger statement fo
             <div><?php echo $settings['company_address']; ?></div>
             <hr>
             <h3>PARTY LEDGER: <?php echo strtoupper($party['name']); ?></h3>
+            <?php if ($dept_id): ?>
+                <h4 style="color: #C9A14A;">Department: <?php echo $departments[$dept_id]; ?></h4>
+            <?php endif; ?>
             <p>From: <?php echo date('d-m-Y', strtotime($from_date)); ?> To: <?php echo date('d-m-Y', strtotime($to_date)); ?></p>
         </div>
         <table>
             <thead>
                 <tr>
-                    <th>Date</th><th>Type</th><th>Department</th><th>Ref#</th>
+                    <th>Date</th><th>Type</th><th>Ref#</th>
                     <th class="text-end">Debit (Dr)</th><th class="text-end">Credit (Cr)</th><th class="text-end">Balance</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td colspan="6" class="text-end fw-bold">Opening Balance</td>
+                    <td colspan="5" class="text-end fw-bold">Opening Balance</td>
                     <td class="text-end fw-bold"><?php echo format_currency($opening_balance); ?></td>
                 </tr>
                 <?php 
@@ -143,7 +148,6 @@ $wa_msg = "Hello " . $party['name'] . ",\n\nPlease find your ledger statement fo
                 <tr>
                     <td><?php echo ($tr['date'] && $tr['date'] != '0000-00-00') ? date('d-m-Y', strtotime($tr['date'])) : '-'; ?></td>
                     <td><?php echo $tr['type']; ?></td>
-                    <td><?php echo $departments[$tr['dept_id']] ?? 'Main'; ?></td>
                     <td><?php echo $tr['bill_no']; ?></td>
                     <td class="text-end"><?php echo $tr['debit'] > 0 ? format_currency($tr['debit']) : '-'; ?></td>
                     <td class="text-end"><?php echo $tr['credit'] > 0 ? format_currency($tr['credit']) : '-'; ?></td>
@@ -153,7 +157,7 @@ $wa_msg = "Hello " . $party['name'] . ",\n\nPlease find your ledger statement fo
                 </tr>
                 <?php endforeach; ?>
                 <tr style="background:#f9f9f9;">
-                    <td colspan="6" class="text-end fw-bold">Closing Balance</td>
+                    <td colspan="5" class="text-end fw-bold">Closing Balance</td>
                     <td class="text-end fw-bold"><?php echo format_currency(abs($running_balance)); ?></td>
                 </tr>
             </tbody>
