@@ -12,7 +12,44 @@ $opening_balance = 0;
 
 if ($party_id) {
     $party = $conn->query("SELECT * FROM parties WHERE id=$party_id")->fetch_assoc();
-    $opening_balance = $party['opening_balance'] ?? 0;
+    $base_opening = (float)($party['opening_balance'] ?? 0);
+    $is_supplier = ($party['type'] == 'supplier');
+
+    // Calculate aggregated transactions BEFORE from_date to get the true opening balance
+    $before_debit = 0;
+    $before_credit = 0;
+
+    // Sales before
+    $sales_before = $conn->query("SELECT SUM(total_amount) as total FROM outwards WHERE party_id=$party_id AND date < '$from_date'")->fetch_assoc();
+    $before_debit += (float)($sales_before['total'] ?? 0);
+
+    // Purchases before
+    $purchases_before = $conn->query("SELECT SUM(total_amount) as total FROM inwards WHERE party_id=$party_id AND date < '$from_date'")->fetch_assoc();
+    $before_credit += (float)($purchases_before['total'] ?? 0);
+
+    // Vouchers before
+    $vouchers_before = $conn->query("SELECT type, SUM(amount) as total FROM vouchers WHERE party_id=$party_id AND date < '$from_date' GROUP BY type");
+    if ($vouchers_before) {
+        while($vb = $vouchers_before->fetch_assoc()){
+            if($vb['type'] == 'receipt') $before_credit += (float)$vb['total'];
+            else $before_debit += (float)$vb['total'];
+        }
+    }
+
+    // Kasars before
+    $kasars_before = $conn->query("SELECT type, SUM(amount) as total FROM kasars WHERE party_id=$party_id AND date < '$from_date' GROUP BY type");
+    if ($kasars_before) {
+        while($kb = $kasars_before->fetch_assoc()){
+            if($kb['type'] == 'allowed') $before_credit += (float)$kb['total'];
+            else $before_debit += (float)$kb['total'];
+        }
+    }
+
+    if ($is_supplier) {
+        $opening_balance = $base_opening + ($before_credit - $before_debit);
+    } else {
+        $opening_balance = $base_opening + ($before_debit - $before_credit);
+    }
 
     // 1. Fetch Sales (Outwards)
     $sales = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Sales' as type, '' as description FROM outwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
