@@ -6,6 +6,7 @@ $settings = get_settings();
 $party_id = isset($_GET['party_id']) ? (int)$_GET['party_id'] : 0;
 $from_date = $_GET['from_date'] ?? date('Y-m-01');
 $to_date = $_GET['to_date'] ?? date('Y-m-d');
+$dept_id = isset($_GET['dept_id']) ? (int)$_GET['dept_id'] : 0;
 
 $transactions = [];
 $opening_balance = 0;
@@ -14,21 +15,30 @@ if ($party_id) {
     $party = $conn->query("SELECT * FROM parties WHERE id=$party_id")->fetch_assoc();
     $base_opening = (float)($party['opening_balance'] ?? 0);
     $is_supplier = ($party['type'] == 'supplier');
+    
+    // Default to session dept_id if not explicitly provided (and remove filter from UI)
+    $dept_id = isset($_GET['dept_id']) ? (int)$_GET['dept_id'] : (isset($_SESSION['dept_id']) ? (int)$_SESSION['dept_id'] : 0);
+    $where_dept = $dept_id ? " AND dept_id=$dept_id " : "";
 
     // Calculate aggregated transactions BEFORE from_date to get the true opening balance
     $before_debit = 0;
     $before_credit = 0;
 
+    // Opening balance from party (only include if no specific dept is selected, or handle as needed)
+    // Usually, opening balance is overall. If filtering by dept, we might want to start from 0 or include it in 'Main'.
+    // Here we will include it if dept is not specified, or just include it as is.
+    $opening_balance_val = $base_opening;
+
     // Sales before
-    $sales_before = $conn->query("SELECT SUM(total_amount) as total FROM outwards WHERE party_id=$party_id AND date < '$from_date'")->fetch_assoc();
+    $sales_before = $conn->query("SELECT SUM(total_amount) as total FROM outwards WHERE party_id=$party_id AND date < '$from_date' $where_dept")->fetch_assoc();
     $before_debit += (float)($sales_before['total'] ?? 0);
 
     // Purchases before
-    $purchases_before = $conn->query("SELECT SUM(total_amount) as total FROM inwards WHERE party_id=$party_id AND date < '$from_date'")->fetch_assoc();
+    $purchases_before = $conn->query("SELECT SUM(total_amount) as total FROM inwards WHERE party_id=$party_id AND date < '$from_date' $where_dept")->fetch_assoc();
     $before_credit += (float)($purchases_before['total'] ?? 0);
 
     // Vouchers before
-    $vouchers_before = $conn->query("SELECT type, SUM(amount) as total FROM vouchers WHERE party_id=$party_id AND date < '$from_date' GROUP BY type");
+    $vouchers_before = $conn->query("SELECT type, SUM(amount) as total FROM vouchers WHERE party_id=$party_id AND date < '$from_date' $where_dept GROUP BY type");
     if ($vouchers_before) {
         while($vb = $vouchers_before->fetch_assoc()){
             if($vb['type'] == 'receipt') $before_credit += (float)$vb['total'];
@@ -37,7 +47,7 @@ if ($party_id) {
     }
 
     // Kasars before
-    $kasars_before = $conn->query("SELECT type, SUM(amount) as total FROM kasars WHERE party_id=$party_id AND date < '$from_date' GROUP BY type");
+    $kasars_before = $conn->query("SELECT type, SUM(amount) as total FROM kasars WHERE party_id=$party_id AND date < '$from_date' $where_dept GROUP BY type");
     if ($kasars_before) {
         while($kb = $kasars_before->fetch_assoc()){
             if($kb['type'] == 'allowed') $before_credit += (float)$kb['total'];
@@ -46,13 +56,13 @@ if ($party_id) {
     }
 
     if ($is_supplier) {
-        $opening_balance = $base_opening + ($before_credit - $before_debit);
+        $opening_balance = $opening_balance_val + ($before_credit - $before_debit);
     } else {
-        $opening_balance = $base_opening + ($before_debit - $before_credit);
+        $opening_balance = $opening_balance_val + ($before_debit - $before_credit);
     }
 
     // 1. Fetch Sales (Outwards)
-    $sales = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Sales' as type, '' as description FROM outwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+    $sales = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Sales' as type, '' as description FROM outwards WHERE party_id=$party_id AND (date BETWEEN '$from_date' AND '$to_date') $where_dept");
     while($sale = $sales->fetch_assoc()) {
         $sale['debit'] = $sale['amount'];
         $sale['credit'] = 0;
@@ -60,7 +70,7 @@ if ($party_id) {
     }
 
     // 2. Fetch Purchases (Inwards)
-    $purchases = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Purchase' as type, '' as description FROM inwards WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+    $purchases = $conn->query("SELECT id, dept_id, date, bill_no, total_amount as amount, 'Purchase' as type, '' as description FROM inwards WHERE party_id=$party_id AND (date BETWEEN '$from_date' AND '$to_date') $where_dept");
     while($p = $purchases->fetch_assoc()) {
         $p['debit'] = 0; 
         $p['credit'] = $p['amount'];
@@ -68,15 +78,12 @@ if ($party_id) {
     }
 
     // 3. Fetch Vouchers
-    $vouchers = $conn->query("SELECT id, dept_id, date, type as vtype, amount, description, 'Voucher' as type FROM vouchers WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+    $vouchers = $conn->query("SELECT id, dept_id, date, type as vtype, amount, description, 'Voucher' as type FROM vouchers WHERE party_id=$party_id AND (date BETWEEN '$from_date' AND '$to_date') $where_dept");
     while($v = $vouchers->fetch_assoc()) {
         $v['bill_no'] = "VCH-" . $v['id'];
         if ($v['vtype'] == 'receipt') {
             $v['debit'] = 0;
             $v['credit'] = $v['amount'];
-        } else if ($v['vtype'] == 'payment') {
-            $v['debit'] = $v['amount'];
-            $v['credit'] = 0;
         } else {
             $v['debit'] = $v['amount'];
             $v['credit'] = 0;
@@ -85,7 +92,7 @@ if ($party_id) {
     }
 
     // 4. Fetch Kasars
-    $kasars = $conn->query("SELECT id, dept_id, date, amount, type as ktype, description, 'Kasar' as type FROM kasars WHERE party_id=$party_id AND date BETWEEN '$from_date' AND '$to_date'");
+    $kasars = $conn->query("SELECT id, dept_id, date, amount, type as ktype, description, 'Kasar' as type FROM kasars WHERE party_id=$party_id AND (date BETWEEN '$from_date' AND '$to_date') $where_dept");
     if ($kasars) {
         while($k = $kasars->fetch_assoc()) {
             $k['bill_no'] = "KSR-" . $k['id'];
@@ -111,11 +118,11 @@ if ($party_id) {
     <div class="col-12 d-flex justify-content-between align-items-center">
         <h4 class="mb-0 text-theme">Party Ledger Report</h4>
         <div class="d-flex gap-2">
-            <button onclick="window.open('print_ledger.php?party_id=<?php echo $party_id; ?>&from_date=<?php echo $from_date; ?>&to_date=<?php echo $to_date; ?>', '_blank')" class="btn btn-outline-gold btn-sm"><i class="fa fa-print me-1"></i> Print Ledger</button>
+            <button onclick="window.open('print_ledger.php?party_id=<?php echo $party_id; ?>&from_date=<?php echo $from_date; ?>&to_date=<?php echo $to_date; ?>&dept_id=<?php echo $dept_id; ?>', '_blank')" class="btn btn-outline-gold btn-sm"><i class="fa fa-print me-1"></i> Print Ledger</button>
             <?php if ($party_id): 
                 $pm = $conn->query("SELECT mobile, name FROM parties WHERE id=$party_id")->fetch_assoc();
                 if ($pm['mobile']):
-                    $wa_url = "print_ledger.php?party_id=" . $party_id . "&from_date=" . $from_date . "&to_date=" . $to_date . "&autoshare=1";
+                    $wa_url = "print_ledger.php?party_id=" . $party_id . "&from_date=" . $from_date . "&to_date=" . $to_date . "&dept_id=" . $dept_id . "&autoshare=1";
             ?>
                 <button type="button" onclick="handleWhatsAppShare('<?php echo $wa_url; ?>', this)" class="btn btn-outline-success btn-sm no-print">
                     <i class="fa-brands fa-whatsapp me-1"></i> Share via WhatsApp
@@ -137,7 +144,7 @@ if ($party_id) {
                     <option value="both">Both Only</option>
                 </select>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label class="form-label">Select Party</label>
                 <select name="party_id" id="partySelect" class="form-select border-secondary" required>
                     <option value="">-- Choose Party --</option>
@@ -192,13 +199,22 @@ if ($party_id) {
     <?php endif; ?>
     <p><?php echo $settings['company_address'] ?? ''; ?></p>
     <hr>
+    <hr>
     <h4>PARTY LEDGER: <?php echo strtoupper($party['name']); ?></h4>
+    <?php if ($dept_id): ?>
+        <h5 class="fw-bold">Department: <span style="color: #C9A14A;"><?php echo $departments[$dept_id]; ?></span></h5>
+    <?php endif; ?>
     <p>Statement Period: <?php echo date('d-m-Y', strtotime($from_date)); ?> To <?php echo date('d-m-Y', strtotime($to_date)); ?></p>
 </div>
 
 <div class="card card-bajot ledger-card">
     <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between">
-        <h5 class="fw-bold mb-0 text-theme">Ledger for: <?php echo $party['name']; ?></h5>
+        <div>
+            <h5 class="fw-bold mb-0 text-theme">Ledger for: <?php echo $party['name']; ?></h5>
+            <?php if ($dept_id): ?>
+                <div class="small mt-1 fw-bold">Department: <span style="color: #C9A14A;"><?php echo $departments[$dept_id]; ?></span></div>
+            <?php endif; ?>
+        </div>
         <div class="text-theme">Opening Balance: <strong><?php echo format_currency($opening_balance); ?></strong></div>
     </div>
     <div class="card-body">
@@ -208,16 +224,15 @@ if ($party_id) {
                     <tr>
                         <th width="12%">Date</th>
                         <th>Particulars / Transaction Type</th>
-                        <th width="12%">Department</th>
-                        <th width="12%">Reference</th>
-                        <th width="12%" class="text-end">Debit (Dr)</th>
-                        <th width="12%" class="text-end">Credit (Cr)</th>
-                        <th width="12%" class="text-end">Balance</th>
+                        <th width="15%">Reference</th>
+                        <th width="15%" class="text-end">Debit (Dr)</th>
+                        <th width="15%" class="text-end">Credit (Cr)</th>
+                        <th width="15%" class="text-end">Balance</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr class="bg-light text-dark">
-                        <td colspan="6" class="text-end fw-bold">Opening Balance</td>
+                        <td colspan="5" class="text-end fw-bold">Opening Balance</td>
                         <td class="text-end fw-bold"><?php echo format_currency($opening_balance); ?></td>
                     </tr>
                     <?php 
@@ -245,11 +260,6 @@ if ($party_id) {
                             <strong><?php echo $tr['type']; ?></strong>
                             <div class="extra-small small text-muted"><?php echo htmlspecialchars($tr['description'] ?? ''); ?></div>
                         </td>
-                        <td>
-                            <span class="badge bg-secondary-subtle text-theme border border-secondary-subtle">
-                                <?php echo $departments[$tr['dept_id']] ?? 'Main'; ?>
-                            </span>
-                        </td>
                         <td><?php echo $tr['bill_no']; ?></td>
                         <td class="text-end text-danger"><?php echo $tr['debit'] > 0 ? format_currency($tr['debit']) : '-'; ?></td>
                         <td class="text-end text-success"><?php echo $tr['credit'] > 0 ? format_currency($tr['credit']) : '-'; ?></td>
@@ -271,7 +281,7 @@ if ($party_id) {
                 </tbody>
                 <tfoot class="table-dark">
                     <tr>
-                        <td colspan="6" class="text-end fw-bold">Closing Balance</td>
+                        <td colspan="5" class="text-end fw-bold">Closing Balance</td>
                         <td class="text-end fw-bold">
                             <?php 
                                 $abs_bal = abs($running_balance);
