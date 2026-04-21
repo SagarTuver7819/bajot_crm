@@ -1,4 +1,6 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 $page_title = 'Salary Management';
 require_once 'includes/header.php';
 
@@ -178,6 +180,9 @@ if ($mode === 'edit' && isset($_GET['id'])) {
                             <option value="">Select Employee...</option>
                             <?php 
                             $emps = $conn->query("SELECT * FROM employees ORDER BY name ASC");
+                            if (!$emps) {
+                                die("Database Error: " . $conn->error);
+                            }
                             while($e = $emps->fetch_assoc()):
                                 $sel = ($salary_data && $salary_data['employee_id'] == $e['id']) ? 'selected' : '';
                             ?>
