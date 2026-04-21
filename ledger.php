@@ -24,10 +24,15 @@ if ($party_id) {
     $before_debit = 0;
     $before_credit = 0;
 
-    // Opening balance from party (only include if no specific dept is selected, or handle as needed)
-    // Usually, opening balance is overall. If filtering by dept, we might want to start from 0 or include it in 'Main'.
-    // Here we will include it if dept is not specified, or just include it as is.
-    $opening_balance_val = $base_opening;
+    // Department-wise Opening Balance Logic
+    $opening_balance_val = (float)($party['opening_balance'] ?? 0);
+    if ($dept_id == 1) {
+        $opening_balance_val = (float)($party['ob_alum'] ?? 0);
+    } elseif ($dept_id == 2) {
+        $opening_balance_val = (float)($party['ob_pwdr'] ?? 0);
+    } elseif ($dept_id == 3) {
+        $opening_balance_val = (float)($party['ob_anod'] ?? 0);
+    }
 
     // Sales before
     $sales_before = $conn->query("SELECT SUM(total_amount) as total FROM outwards WHERE party_id=$party_id AND date < '$from_date' $where_dept")->fetch_assoc();

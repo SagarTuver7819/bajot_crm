@@ -69,6 +69,11 @@ $schema_updates = [
         'mobile_number' => "VARCHAR(15) AFTER name",
         'week_off' => "VARCHAR(20) DEFAULT 'No Week Off' AFTER salary"
     ],
+    'parties' => [
+        'ob_alum' => "DECIMAL(15,2) DEFAULT 0.00",
+        'ob_pwdr' => "DECIMAL(15,2) DEFAULT 0.00",
+        'ob_anod' => "DECIMAL(15,2) DEFAULT 0.00"
+    ],
     'products' => [
         'dept_id' => "INT DEFAULT 1 AFTER id",
         'total_pcs' => "DECIMAL(15,2) DEFAULT 0.00",
