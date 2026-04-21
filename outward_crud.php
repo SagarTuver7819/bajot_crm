@@ -75,11 +75,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
             $rate = (float)$rates[$key];
             
             $dept_id = (int)$_SESSION['dept_id'];
-            if ($dept_id === 1 || $dept_id === 2) {
+            $entry_format = $_POST['entry_format'] ?? '';
+            if ($dept_id === 1 || ($dept_id === 2 && $entry_format !== 'foot')) {
                 // Aluminium Section & Powder Coating: Always Weight * Rate
                 $item_total = $qty_kgs * $rate;
-            } else if ($dept_id === 3) {
-                // Anodizing: (Foot * PCS) * Rate. Here qty_kgs is repurposed as RFT.
+            } else if ($dept_id === 3 || ($dept_id === 2 && $entry_format === 'foot')) {
+                // Anodizing or Powder Coating Foot entry: (Foot * PCS) * Rate. Here qty_kgs is repurposed as RFT.
                 $item_total = $qty_kgs * $rate;
             } else {
                 $item_total = ($unit == 'Pcs') ? ($qty_pcs * $rate) : ($qty_kgs * $rate);
@@ -237,6 +238,13 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
     $outward_items = null;
     $next_bill_no = '';
 
+    // Handle Entry Format Toggling for Powder Coating (Dept 2)
+    $entry_format = $_GET['format'] ?? '';
+    $effective_dept_id = (int)$_SESSION['dept_id'];
+    if ($_SESSION['dept_id'] == 2 && $entry_format === 'foot') {
+        $effective_dept_id = 3;
+    }
+
     if (($mode === 'edit' || $mode === 'view') && isset($_GET['id'])) {
         $id = (int)$_GET['id'];
         $outward = $conn->query("SELECT o.*, p.name as customer_name, p.mobile as customer_mobile FROM outwards o JOIN parties p ON o.party_id = p.id WHERE o.id=$id")->fetch_assoc();
@@ -259,12 +267,26 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
     }
 ?>
     <div class="card card-bajot">
-        <div class="card-header bg-transparent border-0 pt-4 px-4">
-            <h5 class="fw-bold text-theme"><?php echo ucfirst($mode); ?> Sales Entry</h5>
+        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-3">
+            <h5 class="fw-bold text-theme mb-0"><?php echo ucfirst($mode); ?> Sales Entry</h5>
+            <?php if ($_SESSION['dept_id'] == 2 && $mode === 'add'): ?>
+                <div class="ms-2">
+                    <?php if ($entry_format === 'foot'): ?>
+                        <a href="outward_crud.php?mode=add" class="btn btn-sm btn-outline-warning border-2 fw-bold" style="border-style: solid !important;">
+                             General Powder Coating
+                        </a>
+                    <?php else: ?>
+                        <a href="outward_crud.php?mode=add&format=foot" class="btn btn-sm btn-outline-danger border-2 fw-bold" style="border-style: solid !important;">
+                             Sales Foot
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
         <div class="card-body p-4">
             <form method="POST" id="outwardForm">
                 <input type="hidden" name="mode" value="<?php echo $mode; ?>">
+                <input type="hidden" name="entry_format" value="<?php echo $entry_format; ?>">
                 <?php if ($outward): ?>
                     <input type="hidden" name="id" value="<?php echo $outward['id']; ?>">
                 <?php endif; ?>
@@ -303,16 +325,16 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                         <thead class="bg-dark">
                             <tr>
                                 <th style="width: 25%;">Product</th>
-                                <?php if ($_SESSION['dept_id'] == 3): ?>
+                                <?php if ($effective_dept_id == 3): ?>
                                     <th style="width: 10%;">Foot</th>
                                     <th style="width: 10%;">PCS</th>
                                     <th style="width: 15%;">RFT</th>
                                 <?php else: ?>
-                                    <th style="width: 10%; <?php echo ($_SESSION['dept_id'] == 2) ? 'display: none;' : ''; ?>">Unit</th>
-                                    <?php if ($_SESSION['dept_id'] == 2): ?>
+                                    <th style="width: 10%; <?php echo ($effective_dept_id == 2) ? 'display: none;' : ''; ?>">Unit</th>
+                                    <?php if ($effective_dept_id == 2): ?>
                                     <th style="width: 15%;">Color</th>
                                     <?php endif; ?>
-                                    <th style="width: 10%; <?php echo ($_SESSION['dept_id'] == 2) ? 'display: none;' : ''; ?>">Qty/Pcs</th>
+                                    <th style="width: 10%; <?php echo ($effective_dept_id == 2) ? 'display: none;' : ''; ?>">Qty/Pcs</th>
                                     <th style="width: 15%;">Weight/Kg</th>
                                 <?php endif; ?>
                                 <th style="width: 15%;">Rate (₹)</th>
@@ -328,8 +350,7 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                         <select name="product_id[]" class="form-select border-secondary product-select" required>
                                             <option value="">Select Product</option>
                                             <?php 
-                                            $dept_id = (int)$_SESSION['dept_id'];
-                                            $prods = $conn->query("SELECT id, name, rate FROM products WHERE dept_id = $dept_id");
+                                            $prods = $conn->query("SELECT id, name, rate FROM products WHERE dept_id = " . (int)$_SESSION['dept_id']);
                                             while($p = $prods->fetch_assoc()) {
                                                 $sel = ($oit['product_id'] == $p['id']) ? 'selected' : '';
                                                 echo "<option value='{$p['id']}' data-rate='{$p['rate']}' $sel>{$p['name']}</option>";
@@ -339,26 +360,26 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                         <button type="button" class="btn btn-outline-gold" data-bs-toggle="modal" data-bs-target="#quickAddProductModal"><i class="fa fa-plus"></i></button>
                                     </div>
                                 </td>
-                                <td <?php echo ($_SESSION['dept_id'] == 2 || $_SESSION['dept_id'] == 3) ? 'style="display: none;"' : ''; ?>>
+                                <td <?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>>
                                     <select name="unit[]" class="form-select border-secondary unit-select">
                                         <option value="Pcs" <?php echo ($oit['unit'] == 'Pcs') ? 'selected' : ''; ?>>Pcs</option>
-                                        <option value="Kgs" <?php echo ($oit['unit'] == 'Kgs' || $_SESSION['dept_id'] == 2 || $_SESSION['dept_id'] == 3) ? 'selected' : ''; ?>><?php echo ($_SESSION['dept_id'] == 2 || $_SESSION['dept_id'] == 3) ? 'kg' : 'Kgs'; ?></option>
+                                        <option value="Kgs" <?php echo ($oit['unit'] == 'Kgs' || $effective_dept_id == 2 || $effective_dept_id == 3) ? 'selected' : ''; ?>><?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'kg' : 'Kgs'; ?></option>
                                     </select>
                                 </td>
-                                <?php if ($_SESSION['dept_id'] == 3): ?>
+                                <?php if ($effective_dept_id == 3): ?>
                                     <td><input type="number" step="0.01" name="feet[]" class="form-control feet-input" required value="<?php echo $oit['feet']; ?>"></td>
                                     <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="<?php echo $oit['qty_pcs']; ?>"></td>
                                     <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" readonly value="<?php echo $oit['qty_kgs']; ?>"></td>
                                     <input type="hidden" name="color[]" value="">
-                                <?php elseif ($_SESSION['dept_id'] == 2): ?>
+                                <?php elseif ($effective_dept_id == 2): ?>
                                     <td><input type="text" name="color[]" class="form-control" value="<?php echo $oit['color']; ?>" placeholder="Color"></td>
                                     <input type="hidden" name="feet[]" value="0">
                                 <?php else: ?>
                                     <input type="hidden" name="color[]" value="">
                                     <input type="hidden" name="feet[]" value="0">
                                 <?php endif; ?>
-                                <td <?php echo ($_SESSION['dept_id'] == 2 || $_SESSION['dept_id'] == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="<?php echo $oit['qty_pcs']; ?>"></td>
-                                <td <?php echo ($_SESSION['dept_id'] == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="<?php echo $oit['qty_kgs']; ?>"></td>
+                                <td <?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="<?php echo $oit['qty_pcs']; ?>"></td>
+                                <td <?php echo ($effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="<?php echo $oit['qty_kgs']; ?>"></td>
                                 <td><input type="number" step="0.01" name="rate[]" class="form-control rate-input" required value="<?php echo $oit['rate']; ?>"></td>
                                 <td><input type="text" class="form-control item-total" readonly value="<?php echo $oit['total']; ?>"></td>
                                 <td><button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="fa fa-times"></i></button></td>
@@ -370,34 +391,33 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                         <select name="product_id[]" class="form-select border-secondary product-select" required>
                                             <option value="">Select Product</option>
                                             <?php 
-                                            $dept_id = (int)$_SESSION['dept_id'];
-                                            $prods = $conn->query("SELECT id, name, rate FROM products WHERE dept_id = $dept_id");
+                                            $prods = $conn->query("SELECT id, name, rate FROM products WHERE dept_id = " . (int)$_SESSION['dept_id']);
                                             while($p = $prods->fetch_assoc()) echo "<option value='{$p['id']}' data-rate='{$p['rate']}'>{$p['name']}</option>";
                                             ?>
                                         </select>
                                         <button type="button" class="btn btn-outline-gold" data-bs-toggle="modal" data-bs-target="#quickAddProductModal"><i class="fa fa-plus"></i></button>
                                     </div>
                                 </td>
-                                <td <?php echo ($_SESSION['dept_id'] == 2 || $_SESSION['dept_id'] == 3) ? 'style="display: none;"' : ''; ?>>
+                                <td <?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>>
                                     <select name="unit[]" class="form-select border-secondary unit-select">
                                         <option value="Pcs">Pcs</option>
-                                        <option value="Kgs" <?php echo ($_SESSION['dept_id'] == 2 || $_SESSION['dept_id'] == 3) ? 'selected' : ''; ?>><?php echo ($_SESSION['dept_id'] == 2 || $_SESSION['dept_id'] == 3) ? 'kg' : 'Kgs'; ?></option>
+                                        <option value="Kgs" <?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'selected' : ''; ?>><?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'kg' : 'Kgs'; ?></option>
                                     </select>
                                 </td>
-                                <?php if ($_SESSION['dept_id'] == 3): ?>
+                                <?php if ($effective_dept_id == 3): ?>
                                     <td><input type="number" step="0.01" name="feet[]" class="form-control feet-input" required value="0"></td>
                                     <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="0"></td>
                                     <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" readonly value="0"></td>
                                     <input type="hidden" name="color[]" value="">
-                                <?php elseif ($_SESSION['dept_id'] == 2): ?>
+                                <?php elseif ($effective_dept_id == 2): ?>
                                     <td><input type="text" name="color[]" class="form-control" placeholder="Color"></td>
                                     <input type="hidden" name="feet[]" value="0">
                                 <?php else: ?>
                                     <input type="hidden" name="color[]" value="">
                                     <input type="hidden" name="feet[]" value="0">
                                 <?php endif; ?>
-                                <td <?php echo ($_SESSION['dept_id'] == 2 || $_SESSION['dept_id'] == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="0"></td>
-                                <td <?php echo ($_SESSION['dept_id'] == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="0"></td>
+                                <td <?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="0"></td>
+                                <td <?php echo ($effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="0"></td>
                                 <td><input type="number" step="0.01" name="rate[]" class="form-control rate-input" required value="0"></td>
                                 <td><input type="text" class="form-control item-total" readonly value="0.00"></td>
                                 <td><button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="fa fa-times"></i></button></td>
@@ -406,17 +426,17 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                         </tbody>
                         <tfoot>
                             <tr id="columnTotalsRow" style="border-top: 2px solid var(--gold); font-weight: 700; font-size: 13px; background: rgba(201,161,74,0.05);">
-                                <?php if ($_SESSION['dept_id'] == 1): ?>
+                                <?php if ($effective_dept_id == 1): ?>
                                     <td class="text-end" colspan="2" style="color: var(--gold); padding: 10px;">TOTAL</td>
                                     <td style="padding: 10px;"><span id="totalPcs" class="fw-bold">0.00</span> <small class="text-muted">Pcs</small></td>
                                     <td style="padding: 10px;"><span id="totalKgs" class="fw-bold">0.00</span> <small class="text-muted">Kgs</small></td>
                                     <td colspan="3"></td>
-                                <?php elseif ($_SESSION['dept_id'] == 2): ?>
+                                <?php elseif ($effective_dept_id == 2): ?>
                                     <!-- Visible cols: Product(1), Color(2), Weight/Kg(3), Rate(4), Total(5), Del(6) -->
                                     <td class="text-end" colspan="2" style="color: var(--gold); padding: 10px;">TOTAL</td>
                                     <td style="padding: 10px;"><span id="totalKgs" class="fw-bold">0.00</span> <small class="text-muted">Kgs</small></td>
                                     <td colspan="3"></td>
-                                <?php elseif ($_SESSION['dept_id'] == 3): ?>
+                                <?php elseif ($effective_dept_id == 3): ?>
                                     <!-- Visible cols: Product(1), Foot(2), PCS(3), RFT(4), Rate(5), Total(6), Del(7) -->
                                     <td class="text-end" colspan="1" style="color: var(--gold); padding: 10px;">TOTAL</td>
                                     <td style="padding: 10px;"><span id="totalFeet" class="fw-bold">0.000</span> <small class="text-muted">Ft</small></td>
@@ -505,7 +525,7 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
             const qty_kgs = parseFloat(row.querySelector('.qty-kgs-input').value) || 0;
             const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
             
-            const deptId = <?php echo (int)$_SESSION['dept_id']; ?>;
+            const deptId = <?php echo (int)$effective_dept_id; ?>;
             let total = 0;
             if (deptId === 1 || deptId === 2) {
                 // Aluminium Section & Powder Coating: Weight * Rate
