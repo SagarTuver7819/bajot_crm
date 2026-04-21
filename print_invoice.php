@@ -266,7 +266,7 @@ function convert_to_words($number) {
             $dept_id = intval($data['dept_id'] ?? 0);
             ?>
 
-            <?php if ($dept_id == 3): ?>
+            <?php if ($dept_id == 3 || ($dept_id == 2 && $total_feet > 0)): ?>
             <!-- ANODIZING SECTION: Product | Foot | PCS | RFT | Rate | Amount -->
             <table class="accounting-table" style="width:100%;border-collapse:collapse;">
                 <thead>
