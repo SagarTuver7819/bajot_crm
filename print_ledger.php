@@ -23,9 +23,18 @@ $departments = [
 
 // Fetch transactions logic (same as ledger.php)
 $transactions = [];
-$base_opening = (float)($party['opening_balance'] ?? 0);
 $is_supplier = ($party['type'] == 'supplier');
 $where_dept = $dept_id ? " AND dept_id=$dept_id " : "";
+
+// Department-wise Opening Balance Logic
+$base_opening = (float)($party['opening_balance'] ?? 0);
+if ($dept_id == 1) {
+    $base_opening = (float)($party['ob_alum'] ?? 0);
+} elseif ($dept_id == 2) {
+    $base_opening = (float)($party['ob_pwdr'] ?? 0);
+} elseif ($dept_id == 3) {
+    $base_opening = (float)($party['ob_anod'] ?? 0);
+}
 
 // Calculate aggregated transactions BEFORE from_date to get the true opening balance
 $before_debit = 0;

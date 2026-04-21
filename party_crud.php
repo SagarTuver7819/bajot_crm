@@ -22,7 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $type = $_POST['type'];
         $mobile = trim($_POST['mobile']);
         $address = trim($_POST['address']);
-        $opening_balance = (float)$_POST['opening_balance'];
+        $ob_alum = (float)$_POST['ob_alum'];
+        $ob_pwdr = (float)$_POST['ob_pwdr'];
+        $ob_anod = (float)$_POST['ob_anod'];
+        $opening_balance = $ob_alum + $ob_pwdr + $ob_anod;
 
         // Duplication Check (using cleaned name for safety in direct query)
         $clean_name = clean($name);
@@ -44,12 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </script>";
         } else {
             if ($mode === 'add') {
-                $stmt = $conn->prepare("INSERT INTO parties (name, type, mobile, address, opening_balance) VALUES (?, ?, ?, ?, ?)");
-                $stmt->bind_param("ssssd", $name, $type, $mobile, $address, $opening_balance);
+                $stmt = $conn->prepare("INSERT INTO parties (name, type, mobile, address, opening_balance, ob_alum, ob_pwdr, ob_anod) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("ssssdddd", $name, $type, $mobile, $address, $opening_balance, $ob_alum, $ob_pwdr, $ob_anod);
             } else {
                 $id = (int)$_POST['id'];
-                $stmt = $conn->prepare("UPDATE parties SET name=?, type=?, mobile=?, address=?, opening_balance=? WHERE id=?");
-                $stmt->bind_param("ssssdi", $name, $type, $mobile, $address, $opening_balance, $id);
+                $stmt = $conn->prepare("UPDATE parties SET name=?, type=?, mobile=?, address=?, opening_balance=?, ob_alum=?, ob_pwdr=?, ob_anod=? WHERE id=?");
+                $stmt->bind_param("ssssddddi", $name, $type, $mobile, $address, $opening_balance, $ob_alum, $ob_pwdr, $ob_anod, $id);
             }
 
             if ($stmt->execute()) {
@@ -184,9 +187,17 @@ if ($mode === 'edit' && isset($_GET['id'])) {
                         <label class="form-label">Address</label>
                         <textarea name="address" class="form-control" rows="2" placeholder="Complete Address"><?php echo $party ? htmlspecialchars($party['address']) : ''; ?></textarea>
                     </div>
-                    <div class="col-md-6 mb-4">
-                        <label class="form-label">Opening Balance (₹)</label>
-                        <input type="number" step="0.01" name="opening_balance" class="form-control" value="<?php echo $party ? $party['opening_balance'] : '0.00'; ?>">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Opening Balance Aluminium (₹)</label>
+                        <input type="number" step="0.01" name="ob_alum" class="form-control" value="<?php echo $party ? $party['ob_alum'] : '0.00'; ?>">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Opening Balance Powder Coating (₹)</label>
+                        <input type="number" step="0.01" name="ob_pwdr" class="form-control" value="<?php echo $party ? $party['ob_pwdr'] : '0.00'; ?>">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Opening Balance Anodizing (₹)</label>
+                        <input type="number" step="0.01" name="ob_anod" class="form-control" value="<?php echo $party ? $party['ob_anod'] : '0.00'; ?>">
                     </div>
                 </div>
 
