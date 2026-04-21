@@ -58,6 +58,13 @@ echo "<br><hr>";
 
 // 2. Add Missing Columns to Existing Tables
 $schema_updates = [
+    'salaries' => [
+        'total_advances' => "DECIMAL(15,2) DEFAULT 0.00 AFTER net_salary",
+        'expense_id' => "INT AFTER total_advances"
+    ],
+    'salary_advances' => [
+        'expense_id' => "INT AFTER remarks"
+    ],
     'employees' => [
         'mobile_number' => "VARCHAR(15) AFTER name",
         'week_off' => "VARCHAR(20) DEFAULT 'No Week Off' AFTER salary"
