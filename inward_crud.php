@@ -320,8 +320,8 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                     <input type="hidden" name="color[]" value="">
                                 <?php elseif ($effective_dept_id == 2): ?>
                                     <td><input type="text" name="color[]" class="form-control" value="<?php echo $iit['color'] ?? ''; ?>" placeholder="Color"></td>
-                                    <input type="hidden" name="feet[]" value="0">
-                                    <input type="hidden" name="qty_pcs[]" value="0">
+                                    <input type="hidden" name="feet[]" class="feet-input" value="0">
+                                    <input type="hidden" name="qty_pcs[]" class="qty-pcs-input" value="0">
                                     <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="<?php echo $iit['qty_kgs']; ?>"></td>
                                 <?php else: ?>
                                     <input type="hidden" name="color[]" value="">
@@ -361,8 +361,8 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                     <input type="hidden" name="color[]" value="">
                                 <?php elseif ($effective_dept_id == 2): ?>
                                     <td><input type="text" name="color[]" class="form-control" placeholder="Color"></td>
-                                    <input type="hidden" name="feet[]" value="0">
-                                    <input type="hidden" name="qty_pcs[]" value="0">
+                                    <input type="hidden" name="feet[]" class="feet-input" value="0">
+                                    <input type="hidden" name="qty_pcs[]" class="qty-pcs-input" value="0">
                                     <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="0"></td>
                                 <?php else: ?>
                                     <input type="hidden" name="color[]" value="">
@@ -485,8 +485,8 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
             const feetInput = row.querySelector('.feet-input');
             if (feetInput) feetInput.addEventListener('input', () => calculateRow(row));
 
-            row.querySelector('.qty_pcs-input') ? row.querySelector('.qty_pcs-input').addEventListener('input', () => calculateRow(row)) : null;
-            row.querySelector('.qty_kgs-input') ? row.querySelector('.qty_kgs-input').addEventListener('input', () => calculateRow(row)) : null;
+            row.querySelector('.qty-pcs-input') ? row.querySelector('.qty-pcs-input').addEventListener('input', () => calculateRow(row)) : null;
+            row.querySelector('.qty-kgs-input') ? row.querySelector('.qty-kgs-input').addEventListener('input', () => calculateRow(row)) : null;
             
             // Re-find with dots for classes if needed, but original used dots. 
             // Actually, let's just use the classes directly.
