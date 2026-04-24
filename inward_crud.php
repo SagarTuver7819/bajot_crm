@@ -76,8 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_inward'])) {
             $sub_total += $item_total;
             
             // Insert into inward_items
-            $stmt_item = $conn->prepare("INSERT INTO inward_items (inward_id, product_id, color, feet, unit, qty_pcs, qty_kgs, rate, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt_item->bind_param("iisssdddd", $inward_id, $p_id, $color, $feet, $unit, $qty_pcs, $qty_kgs, $rate, $item_total);
+            $stmt_item = $conn->prepare("INSERT INTO inward_items (inward_id, product_id, color, feet, unit, qty_pcs, qty_kgs, qty, rate, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_item->bind_param("iisssddddd", $inward_id, $p_id, $color, $feet, $unit, $qty_pcs, $qty_kgs, $qty_kgs, $rate, $item_total);
             $stmt_item->execute();
             
             // Update Stock (Increase)

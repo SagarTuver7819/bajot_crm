@@ -91,8 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
             $color = $colors[$key] ?? '';
             $feet = $feet_array[$key] ?? 0;
             // Insert into outward_items
-            $stmt_item = $conn->prepare("INSERT INTO outward_items (outward_id, product_id, color, feet, unit, qty_pcs, qty_kgs, rate, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt_item->bind_param("iissddddd", $outward_id, $p_id, $color, $feet, $unit, $qty_pcs, $qty_kgs, $rate, $item_total);
+            $stmt_item = $conn->prepare("INSERT INTO outward_items (outward_id, product_id, color, feet, unit, qty_pcs, qty_kgs, qty, rate, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_item->bind_param("iissdddddd", $outward_id, $p_id, $color, $feet, $unit, $qty_pcs, $qty_kgs, $qty_kgs, $rate, $item_total);
             $stmt_item->execute();
             
             // Update Stock
