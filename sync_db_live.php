@@ -79,6 +79,18 @@ $schema_updates = [
         'total_pcs' => "DECIMAL(15,2) DEFAULT 0.00",
         'total_kgs' => "DECIMAL(15,2) DEFAULT 0.00"
     ],
+    'inwards' => [
+        'dept_id' => "INT DEFAULT 1 AFTER id",
+        'sub_total' => "DECIMAL(15,2) DEFAULT 0.00",
+        'total_amount' => "DECIMAL(15,2) DEFAULT 0.00"
+    ],
+    'inward_items' => [
+        'color' => "VARCHAR(100) AFTER product_id",
+        'feet' => "DECIMAL(15,3) DEFAULT 0.000 AFTER color",
+        'unit' => "VARCHAR(20) DEFAULT 'Kgs'",
+        'qty_pcs' => "DECIMAL(15,2) DEFAULT 0.00",
+        'qty_kgs' => "DECIMAL(15,2) DEFAULT 0.00"
+    ],
     'outwards' => [
         'dept_id' => "INT DEFAULT 1 AFTER id",
         'narration' => "TEXT AFTER bill_no",
