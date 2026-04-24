@@ -497,7 +497,9 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                     </div>
                     <div class="col-md-4 text-end">
                         <?php if ($mode !== 'view'): ?>
-                            <button type="submit" name="save_outward" class="btn btn-gold px-5"><?php echo ($mode === 'edit') ? 'UPDATE' : 'SAVE'; ?> SALES ENTRY <i class="fa fa-check ms-1"></i></button>
+                            <button type="submit" name="save_outward" id="btnSaveOutward" class="btn btn-gold px-5 shadow-sm fw-bold">
+                                <?php echo ($mode === 'edit') ? 'UPDATE' : 'SAVE'; ?> SALES ENTRY <i class="fa fa-check ms-1"></i>
+                            </button>
                         <?php else: ?>
                             <a href="print_invoice.php?type=sales&id=<?php echo $outward['id']; ?>" class="btn btn-outline-warning px-4" target="_blank">PRINT INVOICE <i class="fa fa-print ms-1"></i></a>
                             <?php if (!empty($outward['customer_mobile'])): 
@@ -524,10 +526,14 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
         const addBtn = document.getElementById('addRow');
         
         function calculateRow(row) {
-            const unit = row.querySelector('.unit-select').value;
-            const qty_pcs = parseFloat(row.querySelector('.qty-pcs-input').value) || 0;
-            const qty_kgs = parseFloat(row.querySelector('.qty-kgs-input').value) || 0;
-            const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
+            const unitEl = row.querySelector('.unit-select');
+            const unit = unitEl ? unitEl.value : 'Kgs';
+            const pcsEl = row.querySelector('.qty-pcs-input');
+            const qty_pcs = pcsEl ? parseFloat(pcsEl.value) || 0 : 0;
+            const kgsEl = row.querySelector('.qty-kgs-input');
+            const qty_kgs = kgsEl ? parseFloat(kgsEl.value) || 0 : 0;
+            const rateEl = row.querySelector('.rate-input');
+            const rate = rateEl ? parseFloat(rateEl.value) || 0 : 0;
             
             const deptId = <?php echo (int)$effective_dept_id; ?>;
             let total = 0;
@@ -536,9 +542,10 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                 total = qty_kgs * rate;
             } else if (deptId === 3) {
                 // Anodizing: (Foot * PCS) = RFT, RFT * Rate
-                const feet = parseFloat(row.querySelector('.feet-input').value) || 0;
+                const feetEl = row.querySelector('.feet-input');
+                const feet = feetEl ? parseFloat(feetEl.value) || 0 : 0;
                 const rft = feet * qty_pcs;
-                row.querySelector('.qty-kgs-input').value = rft.toFixed(3);
+                if (kgsEl) kgsEl.value = rft.toFixed(3);
                 total = rft * rate;
             } else {
                 if (unit === 'Pcs') {
@@ -548,7 +555,8 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                 }
             }
             
-            row.querySelector('.item-total').value = total.toFixed(2);
+            const totalEl = row.querySelector('.item-total');
+            if (totalEl) totalEl.value = total.toFixed(2);
             calculateGrand();
         }
 
@@ -557,13 +565,17 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
             document.querySelectorAll('.item-total').forEach(input => {
                 sub += parseFloat(input.value) || 0;
             });
-            document.getElementById('lblSubTotal').innerText = '₹' + sub.toFixed(2);
+            const subEl = document.getElementById('lblSubTotal');
+            if (subEl) subEl.innerText = '₹' + sub.toFixed(2);
             
-            const transport = parseFloat(document.getElementById('transportChargeInput').value) || 0;
-            const discountPercent = parseFloat(document.getElementById('discountPercentInput').value) || 0;
+            const transportEl = document.getElementById('transportChargeInput');
+            const transport = transportEl ? parseFloat(transportEl.value) || 0 : 0;
+            const discountPercentEl = document.getElementById('discountPercentInput');
+            const discountPercent = discountPercentEl ? parseFloat(discountPercentEl.value) || 0 : 0;
             const discountAmount = (sub * discountPercent) / 100;
             const grand = (sub - discountAmount) + transport;
-            document.getElementById('lblGrandTotal').innerText = '₹' + grand.toFixed(2);
+            const grandEl = document.getElementById('lblGrandTotal');
+            if (grandEl) grandEl.innerText = '₹' + grand.toFixed(2);
 
             // Update column-wise totals
             let totalPcs = 0, totalKgs = 0, totalFeet = 0;
@@ -571,65 +583,88 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                 const pcsEl = row.querySelector('.qty-pcs-input');
                 const kgsEl = row.querySelector('.qty-kgs-input');
                 const feetEl = row.querySelector('.feet-input');
-                if (pcsEl) totalPcs += parseFloat(pcsEl.value) || 0;
+                if (pcsEl && pcsEl.type !== 'hidden') totalPcs += parseFloat(pcsEl.value) || 0;
                 if (kgsEl) totalKgs += parseFloat(kgsEl.value) || 0;
-                if (feetEl) totalFeet += parseFloat(feetEl.value) || 0;
+                if (feetEl && feetEl.type !== 'hidden') totalFeet += parseFloat(feetEl.value) || 0;
             });
-            if (document.getElementById('totalPcs')) document.getElementById('totalPcs').innerText = totalPcs.toFixed(2);
-            if (document.getElementById('totalKgs')) document.getElementById('totalKgs').innerText = totalKgs.toFixed(3);
-            if (document.getElementById('totalFeet')) document.getElementById('totalFeet').innerText = totalFeet.toFixed(3);
+            const totPcsEl = document.getElementById('totalPcs');
+            const totKgsEl = document.getElementById('totalKgs');
+            const totFeetEl = document.getElementById('totalFeet');
+            if (totPcsEl) totPcsEl.innerText = totalPcs.toFixed(2);
+            if (totKgsEl) totKgsEl.innerText = totalKgs.toFixed(3);
+            if (totFeetEl) totFeetEl.innerText = totalFeet.toFixed(3);
         }
 
-        document.getElementById('transportChargeInput').addEventListener('input', calculateGrand);
-        document.getElementById('discountPercentInput').addEventListener('input', calculateGrand);
+        const transportEl = document.getElementById('transportChargeInput');
+        if (transportEl) transportEl.addEventListener('input', calculateGrand);
+        const discountEl = document.getElementById('discountPercentInput');
+        if (discountEl) discountEl.addEventListener('input', calculateGrand);
 
-        addBtn.addEventListener('click', () => {
-            const firstRow = table.querySelector('.item-row');
-            const newRow = firstRow.cloneNode(true);
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                const firstRow = table.querySelector('.item-row');
+                if (!firstRow) return;
+                const newRow = firstRow.cloneNode(true);
 
-            // Clean up Select2 artifacts from cloned row
-            $(newRow).find('.select2-container').remove();
-            $(newRow).find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').removeAttr('aria-hidden');
-            $(newRow).find('select option').removeAttr('data-select2-id');
+                // Clean up Select2 artifacts from cloned row
+                $(newRow).find('.select2-container').remove();
+                $(newRow).find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').removeAttr('aria-hidden');
+                $(newRow).find('select option').removeAttr('data-select2-id');
 
-            newRow.querySelectorAll('input').forEach(i => {
-                if (i.classList.contains('item-total')) i.value = '0.00';
-                else if (i.name === 'color[]') i.value = '';
-                else i.value = '0';
+                newRow.querySelectorAll('input').forEach(i => {
+                    if (i.classList.contains('item-total')) i.value = '0.00';
+                    else if (i.name === 'color[]') i.value = '';
+                    else i.value = '0';
+                });
+                const unitSel = newRow.querySelector('.unit-select');
+                if (unitSel) unitSel.selectedIndex = 0;
+                const prodSel = newRow.querySelector('.product-select');
+                if (prodSel) prodSel.selectedIndex = 0;
+
+                table.appendChild(newRow);
+
+                // Re-init Select2 on the new row's dropdowns
+                $(newRow).find('.form-select').select2({
+                    theme: 'bootstrap-5',
+                    width: '100%'
+                });
+
+                attachRowEvents(newRow);
             });
-            if (newRow.querySelector('.unit-select')) newRow.querySelector('.unit-select').selectedIndex = 0;
-            if (newRow.querySelector('.product-select')) newRow.querySelector('.product-select').selectedIndex = 0;
-
-            table.appendChild(newRow);
-
-            // Re-init Select2 on the new row's dropdowns
-            $(newRow).find('.form-select').select2({
-                theme: 'bootstrap-5',
-                width: '100%'
-            });
-
-            attachRowEvents(newRow);
-        });
+        }
 
         function attachRowEvents(row) {
             const feetInput = row.querySelector('.feet-input');
             if (feetInput) feetInput.addEventListener('input', () => calculateRow(row));
             
-            row.querySelector('.qty-pcs-input').addEventListener('input', () => calculateRow(row));
-            row.querySelector('.qty-kgs-input').addEventListener('input', () => calculateRow(row));
-            if (row.querySelector('.unit-select')) row.querySelector('.unit-select').addEventListener('change', () => calculateRow(row));
-            row.querySelector('.rate-input').addEventListener('input', () => calculateRow(row));
-            row.querySelector('.product-select').addEventListener('change', function() {
+            const pcsInput = row.querySelector('.qty-pcs-input');
+            if (pcsInput) pcsInput.addEventListener('input', () => calculateRow(row));
+            
+            const kgsInput = row.querySelector('.qty-kgs-input');
+            if (kgsInput) kgsInput.addEventListener('input', () => calculateRow(row));
+            
+            const unitInput = row.querySelector('.unit-select');
+            if (unitInput) unitInput.addEventListener('change', () => calculateRow(row));
+            
+            const rateInput = row.querySelector('.rate-input');
+            if (rateInput) rateInput.addEventListener('input', () => calculateRow(row));
+            
+            const prodInput = row.querySelector('.product-select');
+            if (prodInput) prodInput.addEventListener('change', function() {
                 const rate = this.options[this.selectedIndex].dataset.rate || 0;
-                row.querySelector('.rate-input').value = rate;
+                if (rateInput) rateInput.value = rate;
                 calculateRow(row);
             });
-            row.querySelector('.remove-row').addEventListener('click', () => {
-                if(table.rows.length > 1) {
-                    row.remove();
-                    calculateGrand();
-                }
-            });
+            
+            const removeBtn = row.querySelector('.remove-row');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', () => {
+                    if(table.rows.length > 1) {
+                        row.remove();
+                        calculateGrand();
+                    }
+                });
+            }
         }
 
         document.querySelectorAll('.item-row').forEach(attachRowEvents);
