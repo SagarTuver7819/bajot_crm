@@ -22,6 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_inward'])) {
     $bill_no = trim($_POST['bill_no']);
     
     $product_ids = $_POST['product_id'];
+    $colors = $_POST['color'] ?? [];
+    $feet_array = $_POST['feet'] ?? [];
     $units = $_POST['unit'];
     $qty_pcs_array = $_POST['qty_pcs'];
     $qty_kgs_array = $_POST['qty_kgs'];
@@ -60,14 +62,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_inward'])) {
             $qty_pcs = (float)$qty_pcs_array[$key];
             $qty_kgs = (float)$qty_kgs_array[$key];
             $rate = (float)$rates[$key];
+            $color = $colors[$key] ?? '';
+            $feet = $feet_array[$key] ?? 0;
             
-            $item_total = ($unit == 'Pcs') ? ($qty_pcs * $rate) : ($qty_kgs * $rate);
+            $dept_id = (int)$_SESSION['dept_id'];
+            if ($dept_id === 1 || $dept_id === 2 || $dept_id === 3) {
+                // For these departments, total is based on Weight/RFT * Rate
+                $item_total = $qty_kgs * $rate;
+            } else {
+                $item_total = ($unit == 'Pcs') ? ($qty_pcs * $rate) : ($qty_kgs * $rate);
+            }
             
             $sub_total += $item_total;
             
             // Insert into inward_items
-            $stmt_item = $conn->prepare("INSERT INTO inward_items (inward_id, product_id, unit, qty_pcs, qty_kgs, rate, total) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt_item->bind_param("iisdddd", $inward_id, $p_id, $unit, $qty_pcs, $qty_kgs, $rate, $item_total);
+            $stmt_item = $conn->prepare("INSERT INTO inward_items (inward_id, product_id, color, feet, unit, qty_pcs, qty_kgs, rate, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt_item->bind_param("iisssdddd", $inward_id, $p_id, $color, $feet, $unit, $qty_pcs, $qty_kgs, $rate, $item_total);
             $stmt_item->execute();
             
             // Update Stock (Increase)
@@ -214,6 +224,8 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
             $next_bill_no = '01';
         }
     }
+
+    $effective_dept_id = (int)$_SESSION['dept_id'];
 ?>
     <div class="card card-bajot">
         <div class="card-header bg-transparent border-0 pt-4 px-4">
@@ -258,10 +270,19 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                     <table class="table table-bordered border-secondary" id="itemsTable">
                         <thead class="bg-dark">
                             <tr>
-                                <th style="width: 30%;">Product</th>
-                                <th style="width: 10%;">Unit</th>
-                                <th style="width: 10%;">Qty/Pcs</th>
-                                <th style="width: 15%;">Weight/Kg</th>
+                                <th style="width: 25%;">Product</th>
+                                <?php if ($effective_dept_id == 3): ?>
+                                    <th style="width: 10%;">Foot</th>
+                                    <th style="width: 10%;">PCS</th>
+                                    <th style="width: 15%;">RFT</th>
+                                <?php else: ?>
+                                    <th style="width: 10%; <?php echo ($effective_dept_id == 2) ? 'display: none;' : ''; ?>">Unit</th>
+                                    <?php if ($effective_dept_id == 2): ?>
+                                    <th style="width: 15%;">Color</th>
+                                    <?php endif; ?>
+                                    <th style="width: 10%; <?php echo ($effective_dept_id == 2) ? 'display: none;' : ''; ?>">Qty/Pcs</th>
+                                    <th style="width: 15%;">Weight/Kg</th>
+                                <?php endif; ?>
                                 <th style="width: 15%;">Rate (₹)</th>
                                 <th style="width: 15%;">Total</th>
                                 <th style="width: 5%;"></th>
@@ -286,14 +307,28 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                         <button type="button" class="btn btn-outline-gold" data-bs-toggle="modal" data-bs-target="#quickAddProductModal"><i class="fa fa-plus"></i></button>
                                     </div>
                                 </td>
-                                <td>
+                                <td <?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>>
                                     <select name="unit[]" class="form-select border-secondary unit-select">
                                         <option value="Pcs" <?php echo ($iit['unit'] == 'Pcs') ? 'selected' : ''; ?>>Pcs</option>
-                                        <option value="Kgs" <?php echo ($iit['unit'] == 'Kgs') ? 'selected' : ''; ?>>Kgs</option>
+                                        <option value="Kgs" <?php echo ($iit['unit'] == 'Kgs' || $effective_dept_id == 2 || $effective_dept_id == 3) ? 'selected' : ''; ?>><?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'kg' : 'Kgs'; ?></option>
                                     </select>
                                 </td>
-                                <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="<?php echo $iit['qty_pcs']; ?>"></td>
-                                <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="<?php echo $iit['qty_kgs']; ?>"></td>
+                                <?php if ($effective_dept_id == 3): ?>
+                                    <td><input type="number" step="0.01" name="feet[]" class="form-control feet-input" required value="<?php echo $iit['feet'] ?? 0; ?>"></td>
+                                    <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="<?php echo $iit['qty_pcs']; ?>"></td>
+                                    <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" readonly value="<?php echo $iit['qty_kgs']; ?>"></td>
+                                    <input type="hidden" name="color[]" value="">
+                                <?php elseif ($effective_dept_id == 2): ?>
+                                    <td><input type="text" name="color[]" class="form-control" value="<?php echo $iit['color'] ?? ''; ?>" placeholder="Color"></td>
+                                    <input type="hidden" name="feet[]" value="0">
+                                    <input type="hidden" name="qty_pcs[]" value="0">
+                                    <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="<?php echo $iit['qty_kgs']; ?>"></td>
+                                <?php else: ?>
+                                    <input type="hidden" name="color[]" value="">
+                                    <input type="hidden" name="feet[]" value="0">
+                                    <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="<?php echo $iit['qty_pcs']; ?>"></td>
+                                    <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="<?php echo $iit['qty_kgs']; ?>"></td>
+                                <?php endif; ?>
                                 <td><input type="number" step="0.01" name="rate[]" class="form-control rate-input" required value="<?php echo $iit['rate']; ?>"></td>
                                 <td><input type="text" class="form-control item-total" readonly value="<?php echo $iit['total']; ?>"></td>
                                 <td><button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="fa fa-times"></i></button></td>
@@ -313,14 +348,28 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                         <button type="button" class="btn btn-outline-gold" data-bs-toggle="modal" data-bs-target="#quickAddProductModal"><i class="fa fa-plus"></i></button>
                                     </div>
                                 </td>
-                                <td>
+                                <td <?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>>
                                     <select name="unit[]" class="form-select border-secondary unit-select">
                                         <option value="Pcs">Pcs</option>
-                                        <option value="Kgs">Kgs</option>
+                                        <option value="Kgs" <?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'selected' : ''; ?>><?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'kg' : 'Kgs'; ?></option>
                                     </select>
                                 </td>
-                                <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="0"></td>
-                                <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="0"></td>
+                                <?php if ($effective_dept_id == 3): ?>
+                                    <td><input type="number" step="0.01" name="feet[]" class="form-control feet-input" required value="0"></td>
+                                    <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="0"></td>
+                                    <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" readonly value="0"></td>
+                                    <input type="hidden" name="color[]" value="">
+                                <?php elseif ($effective_dept_id == 2): ?>
+                                    <td><input type="text" name="color[]" class="form-control" placeholder="Color"></td>
+                                    <input type="hidden" name="feet[]" value="0">
+                                    <input type="hidden" name="qty_pcs[]" value="0">
+                                    <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="0"></td>
+                                <?php else: ?>
+                                    <input type="hidden" name="color[]" value="">
+                                    <input type="hidden" name="feet[]" value="0">
+                                    <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="0"></td>
+                                    <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="0"></td>
+                                <?php endif; ?>
                                 <td><input type="number" step="0.01" name="rate[]" class="form-control rate-input" required value="0"></td>
                                 <td><input type="text" class="form-control item-total" readonly value="0.00"></td>
                                 <td><button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="fa fa-times"></i></button></td>
@@ -370,11 +419,23 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
             const qty_kgs = parseFloat(row.querySelector('.qty-kgs-input').value) || 0;
             const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
             
+            const deptId = <?php echo (int)$effective_dept_id; ?>;
             let total = 0;
-            if (unit === 'Pcs') {
-                total = qty_pcs * rate;
-            } else {
+            if (deptId === 1 || deptId === 2) {
+                // Aluminium Section & Powder Coating: Weight * Rate
                 total = qty_kgs * rate;
+            } else if (deptId === 3) {
+                // Anodizing: (Foot * PCS) = RFT, RFT * Rate
+                const feet = parseFloat(row.querySelector('.feet-input').value) || 0;
+                const rft = feet * qty_pcs;
+                row.querySelector('.qty-kgs-input').value = rft.toFixed(3);
+                total = rft * rate;
+            } else {
+                if (unit === 'Pcs') {
+                    total = qty_pcs * rate;
+                } else {
+                    total = qty_kgs * rate;
+                }
             }
             
             row.querySelector('.item-total').value = total.toFixed(2);
@@ -403,10 +464,11 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
 
             newRow.querySelectorAll('input').forEach(i => {
                 if (i.classList.contains('item-total')) i.value = '0.00';
+                else if (i.name === 'color[]') i.value = '';
                 else i.value = '0';
             });
-            newRow.querySelector('.unit-select').selectedIndex = 0;
-            newRow.querySelector('.product-select').selectedIndex = 0;
+            if (newRow.querySelector('.unit-select')) newRow.querySelector('.unit-select').selectedIndex = 0;
+            if (newRow.querySelector('.product-select')) newRow.querySelector('.product-select').selectedIndex = 0;
             
             table.appendChild(newRow);
             
@@ -420,8 +482,17 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
         });
 
         function attachRowEvents(row) {
-            row.querySelector('.qty-pcs-input').addEventListener('input', () => calculateRow(row));
-            row.querySelector('.qty-kgs-input').addEventListener('input', () => calculateRow(row));
+            const feetInput = row.querySelector('.feet-input');
+            if (feetInput) feetInput.addEventListener('input', () => calculateRow(row));
+
+            row.querySelector('.qty_pcs-input') ? row.querySelector('.qty_pcs-input').addEventListener('input', () => calculateRow(row)) : null;
+            row.querySelector('.qty_kgs-input') ? row.querySelector('.qty_kgs-input').addEventListener('input', () => calculateRow(row)) : null;
+            
+            // Re-find with dots for classes if needed, but original used dots. 
+            // Actually, let's just use the classes directly.
+            row.querySelectorAll('.qty-pcs-input').forEach(el => el.addEventListener('input', () => calculateRow(row)));
+            row.querySelectorAll('.qty-kgs-input').forEach(el => el.addEventListener('input', () => calculateRow(row)));
+
             row.querySelector('.unit-select').addEventListener('change', () => calculateRow(row));
             row.querySelector('.rate-input').addEventListener('input', () => calculateRow(row));
             row.querySelector('.product-select').addEventListener('change', function() {

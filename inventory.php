@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
     <div class="col">
         <div class="card card-bajot p-3 border-theme">
             <h6 class="text-muted small">Total Current Pcs</h6>
-            <h4 class="fw-bold text-theme"><?php 
+            <h4 class="fw-bold text-success"><?php 
                 $total_pcs_sum = $conn->query("SELECT SUM(total_pcs) FROM products WHERE dept_id = $dept_id")->fetch_row()[0];
                 echo number_format($total_pcs_sum ?? 0, 2); 
             ?></h4>
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
     <div class="col">
         <div class="card card-bajot p-3 border-theme">
             <h6 class="text-muted small">Total Current Kgs</h6>
-            <h4 class="fw-bold text-theme"><?php 
+            <h4 class="fw-bold text-success"><?php 
                 $total_kgs_sum = $conn->query("SELECT SUM(total_kgs) FROM products WHERE dept_id = $dept_id")->fetch_row()[0];
                 echo number_format($total_kgs_sum ?? 0, 2); 
             ?></h4>
@@ -107,8 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
                         <td class="fw-bold"><?php echo $row['name']; ?></td>
                         <td><?php echo $row['unit']; ?></td>
                         <td class="small text-muted"><?php echo $row['opening_pcs']; ?> Pcs / <?php echo $row['opening_kgs']; ?> Kg</td>
-                        <td class="fw-bold <?php echo ($row['total_pcs'] < 10) ? 'text-danger' : 'text-theme'; ?>"><?php echo $row['total_pcs']; ?></td>
-                        <td class="fw-bold <?php echo ($row['total_kgs'] < 10) ? 'text-danger' : 'text-theme'; ?>"><?php echo $row['total_kgs']; ?></td>
+                        <td class="fw-bold <?php echo ($row['total_pcs'] < 10) ? 'text-danger' : 'text-success'; ?>"><?php echo $row['total_pcs']; ?></td>
+                        <td class="fw-bold <?php echo ($row['total_kgs'] < 10) ? 'text-danger' : 'text-success'; ?>"><?php echo $row['total_kgs']; ?></td>
                         <td class="small"><?php echo format_currency($row['rate']); ?></td>
                         <?php 
                             $row_val = ($dept_id == 1) ? ($row['rate'] * $row['total_kgs']) : ($row['rate'] * $row['current_stock']);
@@ -131,8 +131,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adjust_stock'])) {
                 <tfoot class="border-top border-secondary">
                     <tr class="fw-bold">
                         <td colspan="3" class="text-end">Total:</td>
-                        <td class="text-theme"><?php echo number_format($footer_total_pcs, 2); ?></td>
-                        <td class="text-theme"><?php echo number_format($footer_total_kgs, 2); ?></td>
+                        <td class="text-success"><?php echo number_format($footer_total_pcs, 2); ?></td>
+                        <td class="text-success"><?php echo number_format($footer_total_kgs, 2); ?></td>
                         <td></td>
                         <td class="text-gold"><?php echo format_currency($footer_total_value); ?></td>
                         <td colspan="2"></td>

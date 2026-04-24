@@ -374,12 +374,14 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                 <?php elseif ($effective_dept_id == 2): ?>
                                     <td><input type="text" name="color[]" class="form-control" value="<?php echo $oit['color']; ?>" placeholder="Color"></td>
                                     <input type="hidden" name="feet[]" value="0">
+                                    <input type="hidden" name="qty_pcs[]" value="0">
+                                    <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="<?php echo $oit['qty_kgs']; ?>"></td>
                                 <?php else: ?>
                                     <input type="hidden" name="color[]" value="">
                                     <input type="hidden" name="feet[]" value="0">
+                                    <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="<?php echo $oit['qty_pcs']; ?>"></td>
+                                    <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="<?php echo $oit['qty_kgs']; ?>"></td>
                                 <?php endif; ?>
-                                <td <?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="<?php echo $oit['qty_pcs']; ?>"></td>
-                                <td <?php echo ($effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="<?php echo $oit['qty_kgs']; ?>"></td>
                                 <td><input type="number" step="0.01" name="rate[]" class="form-control rate-input" required value="<?php echo $oit['rate']; ?>"></td>
                                 <td><input type="text" class="form-control item-total" readonly value="<?php echo $oit['total']; ?>"></td>
                                 <td><button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="fa fa-times"></i></button></td>
@@ -412,12 +414,14 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                                 <?php elseif ($effective_dept_id == 2): ?>
                                     <td><input type="text" name="color[]" class="form-control" placeholder="Color"></td>
                                     <input type="hidden" name="feet[]" value="0">
+                                    <input type="hidden" name="qty_pcs[]" value="0">
+                                    <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="0"></td>
                                 <?php else: ?>
                                     <input type="hidden" name="color[]" value="">
                                     <input type="hidden" name="feet[]" value="0">
+                                    <td><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="0"></td>
+                                    <td><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="0"></td>
                                 <?php endif; ?>
-                                <td <?php echo ($effective_dept_id == 2 || $effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_pcs[]" class="form-control qty-pcs-input" required value="0"></td>
-                                <td <?php echo ($effective_dept_id == 3) ? 'style="display: none;"' : ''; ?>><input type="number" step="0.01" name="qty_kgs[]" class="form-control qty-kgs-input" required value="0"></td>
                                 <td><input type="number" step="0.01" name="rate[]" class="form-control rate-input" required value="0"></td>
                                 <td><input type="text" class="form-control item-total" readonly value="0.00"></td>
                                 <td><button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="fa fa-times"></i></button></td>
@@ -593,8 +597,8 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
                 else if (i.name === 'color[]') i.value = '';
                 else i.value = '0';
             });
-            newRow.querySelector('.unit-select').selectedIndex = 0;
-            newRow.querySelector('.product-select').selectedIndex = 0;
+            if (newRow.querySelector('.unit-select')) newRow.querySelector('.unit-select').selectedIndex = 0;
+            if (newRow.querySelector('.product-select')) newRow.querySelector('.product-select').selectedIndex = 0;
 
             table.appendChild(newRow);
 

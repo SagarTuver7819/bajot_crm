@@ -129,7 +129,7 @@ if ($mode === 'edit' && isset($_GET['id'])) {
                             <td class="fw-bold"><?php echo htmlspecialchars($row['name']); ?></td>
                             <td><?php echo $row['unit']; ?></td>
                             <td><?php if($_SESSION['dept_id'] == 1) echo $row['opening_pcs'] . " / "; echo $row['opening_kgs']; ?></td>
-                            <td class="fw-bold">
+                            <td class="fw-bold text-success">
                                 <?php if($_SESSION['dept_id'] == 1) echo $row['total_pcs'] . " Pcs / "; echo $row['total_kgs'] . " Kg"; ?>
                             </td>
                             <td><?php echo format_currency($row['rate']); ?></td>
