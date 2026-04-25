@@ -21,6 +21,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
     $date = trim($_POST['date']);
     $bill_no = trim($_POST['bill_no']);
     $narration = trim($_POST['narration']);
+    $dept_id = (int)$_SESSION['dept_id'];
+    if ($edit_id > 0) {
+        $curr_outward = $conn->query("SELECT dept_id FROM outwards WHERE id = $edit_id")->fetch_assoc();
+        if ($curr_outward) $dept_id = (int)$curr_outward['dept_id'];
+    }
+    // Duplicate check and auto-increment if needed
+    $check_dup = $conn->query("SELECT id FROM outwards WHERE dept_id = $dept_id AND bill_no = '$bill_no' AND id != $edit_id")->fetch_assoc();
+    if ($check_dup) {
+        $last_max = $conn->query("SELECT MAX(CAST(bill_no AS UNSIGNED)) as max_bill FROM outwards WHERE dept_id = $dept_id")->fetch_assoc();
+        $num = (int)($last_max['max_bill'] ?? 0);
+        $bill_no = str_pad($num + 1, 2, '0', STR_PAD_LEFT);
+    }
     $transport_charge = (float)($_POST['transport_charge'] ?? 0);
     $discount_percent = (float)($_POST['discount'] ?? 0);
     
@@ -54,16 +66,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_outward'])) {
             }
             $conn->query("DELETE FROM outward_items WHERE outward_id=$edit_id");
             
+            $entry_format = $_POST['entry_format'] ?? '';
             // Update main record
-            $stmt = $conn->prepare("UPDATE outwards SET party_id=?, date=?, bill_no=?, narration=? WHERE id=?");
-            $stmt->bind_param("isssi", $party_id, $date, $bill_no, $narration, $edit_id);
+            $stmt = $conn->prepare("UPDATE outwards SET party_id=?, date=?, bill_no=?, narration=?, entry_format=? WHERE id=?");
+            $stmt->bind_param("issssi", $party_id, $date, $bill_no, $narration, $entry_format, $edit_id);
             $stmt->execute();
             $outward_id = $edit_id;
         } else {
             // Insert into outwards
             $dept_id = (int)$_SESSION['dept_id'];
-            $stmt = $conn->prepare("INSERT INTO outwards (dept_id, party_id, date, bill_no, narration) VALUES (?, ?, ?, ?, ?)");
-            $stmt->bind_param("iisss", $dept_id, $party_id, $date, $bill_no, $narration);
+            $entry_format = $_POST['entry_format'] ?? '';
+            $stmt = $conn->prepare("INSERT INTO outwards (dept_id, party_id, date, bill_no, narration, entry_format) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("iissss", $dept_id, $party_id, $date, $bill_no, $narration, $entry_format);
             $stmt->execute();
             $outward_id = $conn->insert_id;
         }
@@ -161,7 +175,7 @@ if (isset($_GET['delete'])) {
     <div class="card card-bajot">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-custom datatable w-100">
+                <table class="table table-custom datatable-bill-sort w-100">
                     <thead>
                         <tr>
                             <th>Date</th>
@@ -176,7 +190,7 @@ if (isset($_GET['delete'])) {
                     <tbody>
                         <?php 
                         $dept_id = (int)$_SESSION['dept_id'];
-                        $res = $conn->query("SELECT o.*, p.name as customer_name, p.mobile FROM outwards o JOIN parties p ON o.party_id = p.id WHERE o.dept_id = $dept_id ORDER BY o.id DESC");
+                        $res = $conn->query("SELECT o.*, p.name as customer_name, p.mobile FROM outwards o JOIN parties p ON o.party_id = p.id WHERE o.dept_id = $dept_id ORDER BY CAST(o.bill_no AS UNSIGNED) DESC, o.id DESC");
                         
                         // Base URL for link sharing
                         $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
@@ -238,28 +252,31 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
     $outward_items = null;
     $next_bill_no = '';
 
-    // Handle Entry Format Toggling for Powder Coating (Dept 2)
     $entry_format = $_GET['format'] ?? '';
-    $effective_dept_id = (int)$_SESSION['dept_id'];
-    if ($_SESSION['dept_id'] == 2 && $entry_format === 'foot') {
-        $effective_dept_id = 3;
-    }
-
     if (($mode === 'edit' || $mode === 'view') && isset($_GET['id'])) {
         $id = (int)$_GET['id'];
         $outward = $conn->query("SELECT o.*, p.name as customer_name, p.mobile as customer_mobile FROM outwards o JOIN parties p ON o.party_id = p.id WHERE o.id=$id")->fetch_assoc();
         
+        if ($outward && !empty($outward['entry_format'])) {
+            $entry_format = $outward['entry_format'];
+        }
+
         $items_res = $conn->query("SELECT * FROM outward_items WHERE outward_id=$id");
         while($item = $items_res->fetch_assoc()) {
             $outward_items[] = $item;
         }
     }
 
+    $effective_dept_id = (int)$_SESSION['dept_id'];
+    if ($_SESSION['dept_id'] == 2 && $entry_format === 'foot') {
+        $effective_dept_id = 3;
+    }
+
     if ($mode === 'add') {
         $dept_id = (int)$_SESSION['dept_id'];
-        $last_bill = $conn->query("SELECT bill_no FROM outwards WHERE dept_id = $dept_id ORDER BY id DESC LIMIT 1")->fetch_assoc();
-        if ($last_bill) {
-            $num = (int)$last_bill['bill_no'];
+        $last_bill = $conn->query("SELECT MAX(CAST(bill_no AS UNSIGNED)) as max_bill FROM outwards WHERE dept_id = $dept_id")->fetch_assoc();
+        if ($last_bill && $last_bill['max_bill'] !== null) {
+            $num = (int)$last_bill['max_bill'];
             $next_bill_no = str_pad($num + 1, 2, '0', STR_PAD_LEFT);
         } else {
             $next_bill_no = '01';
@@ -269,14 +286,14 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
     <div class="card card-bajot">
         <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center gap-3">
             <h5 class="fw-bold text-theme mb-0"><?php echo ucfirst($mode); ?> Sales Entry</h5>
-            <?php if ($_SESSION['dept_id'] == 2 && $mode === 'add'): ?>
+            <?php if ($_SESSION['dept_id'] == 2 && ($mode === 'add' || $mode === 'edit')): ?>
                 <div class="ms-2">
                     <?php if ($entry_format === 'foot'): ?>
-                        <a href="outward_crud.php?mode=add" class="btn btn-sm btn-outline-warning border-2 fw-bold" style="border-style: solid !important;">
+                        <a href="outward_crud.php?mode=<?php echo $mode; ?><?php echo ($mode === 'edit' ? '&id='.$outward['id'] : ''); ?>" class="btn btn-sm btn-outline-warning border-2 fw-bold" style="border-style: solid !important;">
                              General Powder Coating
                         </a>
                     <?php else: ?>
-                        <a href="outward_crud.php?mode=add&format=foot" class="btn btn-sm btn-outline-danger border-2 fw-bold" style="border-style: solid !important;">
+                        <a href="outward_crud.php?mode=<?php echo $mode; ?><?php echo ($mode === 'edit' ? '&id='.$outward['id'] : ''); ?>&format=foot" class="btn btn-sm btn-outline-danger border-2 fw-bold" style="border-style: solid !important;">
                              Sales Foot
                         </a>
                     <?php endif; ?>
@@ -676,3 +693,19 @@ elseif ($mode === 'add' || $mode === 'edit' || $mode === 'view'):
 <?php include_once 'includes/quick_party_modal.php'; ?>
 <?php include_once 'includes/quick_product_modal.php'; ?>
 <?php require_once 'includes/footer.php'; ?>
+
+<script>
+$(document).ready(function() {
+    if ($.fn.DataTable.isDataTable('.datatable-bill-sort')) {
+        $('.datatable-bill-sort').DataTable().destroy();
+    }
+    $('.datatable-bill-sort').DataTable({
+        responsive: true,
+        order: [[1, 'desc']], // Sort by Bill No (index 1) Desc
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search records..."
+        }
+    });
+});
+</script>
