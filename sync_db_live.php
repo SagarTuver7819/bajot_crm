@@ -94,6 +94,7 @@ $schema_updates = [
     'outwards' => [
         'dept_id' => "INT DEFAULT 1 AFTER id",
         'narration' => "TEXT AFTER bill_no",
+        'entry_format' => "VARCHAR(20) DEFAULT '' AFTER narration",
         'discount' => "DECIMAL(15,2) DEFAULT 0.00",
         'transport_charge' => "DECIMAL(15,2) DEFAULT 0.00",
         'sub_total' => "DECIMAL(15,2) DEFAULT 0.00",
@@ -127,5 +128,16 @@ foreach ($schema_updates as $table => $columns) {
 }
 
 echo "<hr><h4>Schema Update Complete.</h4>";
-echo "Salary Master entry issue should be fixed now. Please test it on live.";
+
+// 3. One-time data fix for Powder Coating formats
+echo "<b>Performing data migration:</b><br>";
+$fix_sql = "UPDATE outwards o SET entry_format = 'foot' WHERE dept_id = 2 AND entry_format = '' AND EXISTS (SELECT 1 FROM outward_items oi WHERE oi.outward_id = o.id AND oi.feet > 0)";
+if ($conn->query($fix_sql)) {
+    echo "- Updated " . $conn->affected_rows . " existing records to 'foot' format.<br>";
+}
+
+echo "<br><b>Final steps:</b><br>";
+echo "1. Powder Coating format issues (Add/Edit) are now resolved.<br>";
+echo "2. Bill Number sorting and duplicate prevention is active.<br>";
+echo "Please test these modules on the live environment.";
 ?>
