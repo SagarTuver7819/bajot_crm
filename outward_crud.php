@@ -203,7 +203,7 @@ if (isset($_GET['delete'])) {
                         ?>
                         <tr>
                             <td><?php echo date('d-m-Y', strtotime($row['date'])); ?></td>
-                            <td class="fw-bold">#<?php echo $row['bill_no']; ?></td>
+                            <td class="fw-bold" data-order="<?php echo (int)$row['bill_no']; ?>">#<?php echo $row['bill_no']; ?></td>
                             <td><?php echo $row['customer_name']; ?></td>
                             <td><span class="badge bg-secondary"><?php echo $item_count; ?> Items</span></td>
                             <td class="fw-bold"><?php echo format_currency($row['total_amount']); ?></td>
